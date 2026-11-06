@@ -1,6 +1,6 @@
 // 房间创建配置：标题 / 时长 / 日期范围（Temporal）/ 每日窗口
 import { useState } from 'react'
-import { Button, Card, Grid, Group, RangeSlider, Slider, Stack, Text, TextInput } from '@mantine/core'
+import { Box, Button, Card, Grid, Group, RangeSlider, Slider, Stack, Text, TextInput } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import { notifications } from '@mantine/notifications'
 import { api, unwrap, ApiError } from '../api/client'
@@ -98,55 +98,54 @@ export function RoomConfigForm({ onCreated }: RoomConfigFormProps) {
             </Text>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Text size="sm" fw={500} mb="xs">
+            <Text size="sm" fw={500}>
               每日排程窗口
             </Text>
-            <RangeSlider
-              min={0}
-              max={24}
-              step={1}
-              minRange={1}
-              value={hours}
-              onChange={setHours}
-              mb="lg"
-              marks={[
-                { value: 0, label: '0点' },
-                { value: 8, label: '8点' },
-                { value: 12, label: '12点' },
-                { value: 18, label: '18点' },
-                { value: 22, label: '22点' },
-                { value: 24, label: '24点' },
-              ]}
-              label={(v) => `${v}:00`}
-              labelAlwaysOn
-              pb="xl"
-            />
-            <Text size="xs" c="dimmed" mt={-28}>
+            {/* pt 为拖拽浮动标签留白；pb 为轨道下方的 mark 标签留白（Mantine mark 为绝对定位，不占组件高度） */}
+            <Box pt="lg" pb="xl">
+              <RangeSlider
+                min={0}
+                max={24}
+                step={1}
+                minRange={1}
+                value={hours}
+                onChange={setHours}
+                marks={[
+                  { value: 0, label: '0点' },
+                  { value: 8, label: '8点' },
+                  { value: 12, label: '12点' },
+                  { value: 18, label: '18点' },
+                  { value: 24, label: '24点' },
+                ]}
+                label={(v) => `${v}:00`}
+              />
+            </Box>
+            <Text size="xs" c="dimmed" mt={2}>
               纵轴按30分钟粒度离散化为槽位（Slot）
             </Text>
           </Grid.Col>
         </Grid>
         <div>
-          <Text size="sm" fw={500} mb="xs">
+          <Text size="sm" fw={500}>
             会议时长
           </Text>
-          <Slider
-            min={30}
-            max={240}
-            step={30}
-            value={duration}
-            onChange={setDuration}
-            marks={[
-              { value: 30, label: '30分' },
-              { value: 60, label: '1时' },
-              { value: 120, label: '2时' },
-              { value: 180, label: '3时' },
-              { value: 240, label: '4时' },
-            ]}
-            label={(v) => `${v}分钟`}
-            labelAlwaysOn
-            pb="xl"
-          />
+          <Box pt="lg" pb="xl">
+            <Slider
+              min={30}
+              max={240}
+              step={30}
+              value={duration}
+              onChange={setDuration}
+              marks={[
+                { value: 30, label: '30分' },
+                { value: 60, label: '1时' },
+                { value: 120, label: '2时' },
+                { value: 180, label: '3时' },
+                { value: 240, label: '4时' },
+              ]}
+              label={(v) => `${v}分钟`}
+            />
+          </Box>
         </div>
         <Group justify="flex-end">
           <Button loading={submitting} onClick={() => void handleSubmit()}>

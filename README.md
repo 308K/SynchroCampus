@@ -105,7 +105,7 @@ scripts/dev.ts              # 并发进程管理（API + Web）
 
 完整交接说明见 **[`docs/DEPLOY.md`](docs/DEPLOY.md)**（后端由独立 agent 按该文档执行）。规划摘要：
 
-- **域名**：`synchro.kkn.moe` → Cloudflare Pages（构建命令 `bun install && bun run build`，输出 `dist`，构建期设 `VITE_API_BASE=https://api.synchro.kkn.moe`）；`api.synchro.kkn.moe` → Cloudflare Tunnel 穿透到云服务器 `127.0.0.1:3001`。同一 zone 两个主机名，TLS 均由 Cloudflare 签发。
+- **域名**：`synchro.kkn.moe` → Cloudflare Pages（构建命令 `bun install && bun run build`，输出 `dist`，构建期设 `VITE_API_BASE=https://synchro-api.kkn.moe`）；`synchro-api.kkn.moe` → Cloudflare Tunnel 穿透到云服务器 `127.0.0.1:3001`。同一 zone 两个主机名，TLS 均由 Cloudflare 签发。
 - **后端**：云服务器 Bun + systemd 常驻 `bun src/server/index.ts`（无需 Nginx/证书）；`.env` 生产值：`TURNSTILE_SECRET`、`TURNSTILE_HOSTNAMES=synchro.kkn.moe`（切勿含 localhost）、固定 `JWT_SECRET`、`CORS_ORIGINS=https://synchro.kkn.moe`。
 - **Turnstile Dashboard**：组件主机名需添加 `synchro.kkn.moe`。
 - 方案 B（单主机名同域、弃用 Pages）与上线验证清单、备份回滚、故障速查均在 `docs/DEPLOY.md`。

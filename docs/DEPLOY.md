@@ -1,19 +1,20 @@
 # 部署交接文档（后端 agent 必读）
 
 > 本文档面向负责**后端部署**的 agent / 同学。前端由 Cloudflare Pages 托管，后端由闲置云服务器 + Cloudflare Tunnel 穿透。
-> 域名规划：`synchro.kkn.moe`（前端 Pages）与 `api.synchro.kkn.moe`（后端 Tunnel）——**同一个注册域名（zone），两个主机名**。
+> 域名规划：`synchro.kkn.moe`（前端 Pages）与 `synchro-api.kkn.moe`（后端 Tunnel）——**同一个注册域名（zone），两个主机名**。
 
 ## 0. 架构总览
 
 ```
 浏览器 ── https://synchro.kkn.moe ────────> Cloudflare Pages（dist/ 静态产物）
-        │  fetch https://api.synchro.kkn.moe/api/*（CORS + Bearer JWT）
-        └── https://api.synchro.kkn.moe ──> Cloudflare Tunnel (cloudflared)
+        │  fetch https://synchro-api.kkn.moe/api/*（CORS + Bearer JWT）
+        └── https://synchro-api.kkn.moe ──> Cloudflare Tunnel (cloudflared)
                                               └── http://127.0.0.1:3001（Bun + Elysia 2 + SQLite WAL）
 ```
 
 - **同域说明**：Cloudflare 允许同一 zone 下不同主机名分别指向 Pages 与 Tunnel，TLS 证书均由 Cloudflare 自动签发，无需 Let's Encrypt。
-  ⚠️ 但**同一个主机名不能同时指向 Pages 和 Tunnel**（一个主机名只有一个源）。若坚持前端后端完全同主机名，走「方案 B」（见 §4）。
+  ⚠️ Universal SSL 仅覆盖**单级**子域（`*.kkn.moe`）：后端主机名必须形如 `synchro-api.kkn.moe`；`api.synchro.kkn.moe` 这类多级主机名拿不到证书，勿用。
+  ⚠️ 同一个主机名不能同时指向 Pages 和 Tunnel（一个主机名只有一个源）。若坚持前端后端完全同主机名，走「方案 B」（见 §4）。
 - 前端为 hash 路由（`/#/room/xxx`），Pages **无需**配置 SPA fallback / `_redirects`。
 - 人机验证为 Cloudflare Turnstile：前端组件在 `synchro.kkn.moe` 渲染，后端向 siteverify 校验并核对 hostname 白名单（`TURNSTILE_HOSTNAMES`）。
 
@@ -23,7 +24,7 @@
 | --- | --- |
 | 构建命令 | `bun install && bun run build`（正确；Pages 依据 `bun.lock` 自动使用 Bun） |
 | 输出目录 | `dist` |
-| 构建环境变量 | `VITE_API_BASE=https://api.synchro.kkn.moe` |
+| 构建环境变量 | `VITE_API_BASE=https://synchro-api.kkn.moe` |
 | 自定义域 | `synchro.kkn.moe`（Pages → Custom domains；如需 `www` 一并添加） |
 
 要点：
@@ -93,7 +94,7 @@ cd /opt/synchrocampus && git pull && bun install && systemctl restart synchrocam
 # 安装 cloudflared 后：
 cloudflared tunnel login                      # 选择 kkn.moe zone
 cloudflared tunnel create synchro-api
-cloudflared tunnel route dns synchro-api api.synchro.kkn.moe   # 自动写 CNAME 到 <id>.cfargotunnel.com
+cloudflared tunnel route dns synchro-api synchro-api.kkn.moe   # 自动写 CNAME 到 <id>.cfargotunnel.com
 ```
 
 `~/.cloudflared/config.yml`：
@@ -102,7 +103,7 @@ cloudflared tunnel route dns synchro-api api.synchro.kkn.moe   # 自动写 CNAME
 tunnel: synchro-api
 credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
 ingress:
-  - hostname: api.synchro.kkn.moe
+  - hostname: synchro-api.kkn.moe
     service: http://127.0.0.1:3001
   - service: http_status:404
 ```
@@ -129,16 +130,16 @@ systemctl status cloudflared
 
 ```bash
 # 1) 后端存活
-curl -s https://api.synchro.kkn.moe/api/health            # {"ok":true}
+curl -s https://synchro-api.kkn.moe/api/health            # {"ok":true}
 
 # 2) CORS 预检（必须回显 origin 且 allow-headers 含 authorization）
-curl -si -X OPTIONS https://api.synchro.kkn.moe/api/auth/login \
+curl -si -X OPTIONS https://synchro-api.kkn.moe/api/auth/login \
   -H 'Origin: https://synchro.kkn.moe' \
   -H 'Access-Control-Request-Method: POST' \
   -H 'Access-Control-Request-Headers: authorization,content-type' | head -12
 
 # 3) Turnstile 已生效：空 token 注册应 403（若 503 = TURNSTILE_SECRET 未配置）
-curl -s -X POST https://api.synchro.kkn.moe/api/auth/register \
+curl -s -X POST https://synchro-api.kkn.moe/api/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"username":"probe-user","password":"probe123456","turnstileToken":""}'
 
