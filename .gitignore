@@ -1,0 +1,17 @@
+# 依赖与构建产物
+node_modules/
+dist/
+tsbuild/
+
+# 本地数据库（SQLite 数据文件）
+data/
+
+# 环境变量（含 Turnstile Secret，严禁提交）
+.env
+.env.local
+.env.*.local
+
+# 系统与日志
+.DS_Store
+Thumbs.db
+*.log

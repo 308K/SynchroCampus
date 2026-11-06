@@ -1,0 +1,133 @@
+@layer base {
+  :root {
+    /* 原生中西文自动排版间距（替代人工混排空格） */
+    text-autospace: normal;
+    text-spacing-trim: space-all;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+}
+
+/* ===== 离散时空网格（涂抹 / 热力图共用） ===== */
+.sc-grid-wrap {
+  overflow: auto;
+  border: 1px solid light-dark(var(--mantine-color-default-border), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-body);
+}
+
+.sc-grid {
+  display: grid;
+  min-width: max-content;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sc-grid-day {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.sc-grid-time {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 52px;
+  padding: 0 8px 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--mantine-color-dimmed);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border-right: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.sc-grid-time--hour {
+  color: var(--mantine-color-text);
+  font-weight: 600;
+}
+
+.sc-grid-corner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  border-right: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.sc-cell {
+  height: 34px;
+  min-width: 46px;
+  border-right: 1px solid light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.04));
+  border-bottom: 1px solid light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.04));
+  cursor: pointer;
+}
+
+.sc-cell--weekend {
+  background: light-dark(rgba(0, 0, 0, 0.025), rgba(255, 255, 255, 0.03));
+}
+
+/* 涂抹网格三态 */
+.sc-cell--busy {
+  background: light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-5));
+}
+
+.sc-cell--available {
+  background: var(--sc-brand-5);
+}
+
+.sc-cell--tentative {
+  background: var(--sc-amber-2);
+}
+
+.sc-cell--paint:hover {
+  outline: 2px solid var(--mantine-color-brand-3);
+  outline-offset: -2px;
+}
+
+/* 触控涂抹：在网格上禁用浏览器默认手势 */
+.sc-grid[data-paintable='true'] .sc-cell {
+  touch-action: none;
+}
+
+/* ===== OKLCH 热力图 ===== */
+.heatmap-cell {
+  /* L / C 由内联 CSS 变量注入，Hue 固定 280 */
+  background-color: oklch(var(--cell-l) var(--cell-c) 280);
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.heatmap-cell:hover {
+  outline: 2px solid var(--mantine-color-brand-4);
+  outline-offset: -2px;
+}
+
+/* 主题色 CSS 变量（供三态单元格取色） */
+:root {
+  --sc-brand-5: oklch(0.68 0.19 280);
+  --sc-amber-2: oklch(0.82 0.13 75);
+}
+
+[data-mantine-color-scheme='dark'] {
+  --sc-brand-5: oklch(0.62 0.17 280);
+  --sc-amber-2: oklch(0.75 0.12 75);
+}

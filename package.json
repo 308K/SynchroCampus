@@ -1,0 +1,42 @@
+{
+  "name": "synchrocampus",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "序时 SynchroCampus —— 基于离散时空碰撞与启发式约束规划的群体日程自协同决策智能体",
+  "scripts": {
+    "dev": "bun scripts/dev.ts",
+    "dev:api": "bun --watch src/server/index.ts",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "bun src/server/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.4.3",
+    "@elysiajs/eden": "^1.4.9",
+    "@mantine/core": "7",
+    "@mantine/dates": "7",
+    "@mantine/hooks": "7",
+    "@mantine/notifications": "7",
+    "@tabler/icons-react": "^3.50.0",
+    "canvas-confetti": "^1.9.4",
+    "drizzle-orm": "^0.45.4",
+    "elysia": "^1.4.31",
+    "nanoid": "^6.0.2",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "temporal-polyfill": "^1.0.8"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  }
+}

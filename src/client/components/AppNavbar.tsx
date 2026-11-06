@@ -1,0 +1,71 @@
+// 顶栏导航：品牌、主题切换、登录态
+import { Avatar, Button, Group, Menu, Text, ThemeIcon, ActionIcon, useMantineColorScheme, Tooltip } from '@mantine/core'
+import { IconLogout, IconMoonFilled, IconSunFilled } from '@tabler/icons-react'
+import { useAuth } from '../auth/AuthContext'
+import { APP_NAME } from '../config'
+import type { AuthMode } from './AuthModal'
+
+interface AppNavbarProps {
+  onOpenAuth: (mode: AuthMode) => void
+}
+
+export function AppNavbar({ onOpenAuth }: AppNavbarProps) {
+  const { user, logout } = useAuth()
+  const { colorScheme, setColorScheme } = useMantineColorScheme()
+
+  return (
+    <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+      <Group gap="sm" wrap="nowrap">
+        <ThemeIcon size={34} radius="md" variant="gradient" gradient={{ from: '#9c73ff', to: '#5a29bf', deg: 45 }}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5V12l3.5 2" />
+          </svg>
+        </ThemeIcon>
+        <div>
+          <Text fw={800} lh={1}>
+            {APP_NAME}
+          </Text>
+          <Text size="xs" c="dimmed" lh={1.3}>
+            群体日程自协同决策智能体
+          </Text>
+        </div>
+      </Group>
+
+      <Group gap="sm" wrap="nowrap">
+        <Tooltip label={colorScheme === 'dark' ? '切换浅色' : '切换深色'}>
+          <ActionIcon
+            variant="default"
+            size="lg"
+            aria-label="切换主题"
+            onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
+          >
+            {colorScheme === 'dark' ? <IconSunFilled size={17} /> : <IconMoonFilled size={17} />}
+          </ActionIcon>
+        </Tooltip>
+        {user ? (
+          <Menu shadow="md" width={190} position="bottom-end">
+            <Menu.Target>
+              <Button variant="subtle" leftSection={<Avatar size={24} radius="xl" color="brand" variant="filled">{user.username.slice(0, 1).toUpperCase()}</Avatar>}>
+                {user.username}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>账号</Menu.Label>
+              <Menu.Item leftSection={<IconLogout size={15} />} onClick={logout}>
+                退出登录
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        ) : (
+          <Group gap="xs" wrap="nowrap">
+            <Button variant="subtle" onClick={() => onOpenAuth('login')}>
+              登录
+            </Button>
+            <Button onClick={() => onOpenAuth('register')}>注册</Button>
+          </Group>
+        )}
+      </Group>
+    </Group>
+  )
+}

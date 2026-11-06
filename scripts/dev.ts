@@ -1,0 +1,57 @@
+// 并发开发进程管理：API（Bun watch）+ Web（Vite HMR）
+const jobs: Array<{ name: string; proc: Bun.Subprocess<'ignore', 'pipe', 'pipe'> }> = []
+let shuttingDown = false
+
+const C = { magenta: '\x1b[35m', cyan: '\x1b[36m', reset: '\x1b[0m', dim: '\x1b[2m' }
+
+async function pump(name: string, stream: ReadableStream<Uint8Array>) {
+  const decoder = new TextDecoder()
+  const reader = stream.getReader()
+  let buffer = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+    for (const line of lines) {
+      if (line.trim().length === 0) continue
+      console.log(`${C.dim}[${name}]${C.reset} ${line}`)
+    }
+  }
+  if (buffer.trim()) console.log(`${C.dim}[${name}]${C.reset} ${buffer}`)
+}
+
+function start(name: string, args: string[]) {
+  const proc = Bun.spawn([process.execPath, ...args], {
+    stdout: 'pipe',
+    stderr: 'pipe',
+    env: process.env,
+  })
+  jobs.push({ name, proc })
+  void pump(name, proc.stdout as ReadableStream<Uint8Array>)
+  void pump(name, proc.stderr as ReadableStream<Uint8Array>)
+  void proc.exited.then((code) => {
+    if (shuttingDown) return
+    console.log(`${C.magenta}[dev]${C.reset} 进程 [${name}] 已退出（code=${code}），正在停止其余进程…`)
+    shutdown(1)
+  })
+}
+
+function shutdown(code: number): void {
+  if (shuttingDown) return
+  shuttingDown = true
+  for (const { proc } of jobs) {
+    try {
+      proc.kill()
+    } catch {}
+  }
+  process.exit(code)
+}
+
+process.on('SIGINT', () => shutdown(0))
+process.on('SIGTERM', () => shutdown(0))
+
+console.log(`${C.magenta}[dev]${C.reset} SynchroCampus 开发模式启动：API :3001 + Web :5173`)
+start('api', ['run', 'dev:api'])
+start('web', ['run', 'dev:web'])

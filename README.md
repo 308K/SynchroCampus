@@ -1,0 +1,102 @@
+# 序时 SynchroCampus
+
+> 基于离散时空碰撞与启发式约束规划驱动的群体日程自协同决策智能体
+>
+> 内蒙古大学第二届高校师生人工智能应用能力大赛 · 校园管理/校园生活应用智能体赛道
+> 主题：智启北疆，联动丝路——焕新校园新形态
+
+## 快速开始（本机预览）
+
+前置要求：[Bun ≥ 1.1](https://bun.sh)（Node 20+ 亦可运行 Vite 前端）。
+
+```bash
+bun install          # 安装依赖
+bun run dev          # 一键并发启动：API :3001（watch 热重载）+ Web :5173（Vite HMR）
+```
+
+打开 <http://localhost:5173> 即可预览。`Ctrl+C` 一键停止全部进程。
+
+### Turnstile 配置（必须）
+
+注册/登录前，需要在 `.env` 中补齐 Cloudflare Turnstile 的 **Secret Key**：
+
+| 变量 | 说明 |
+| --- | --- |
+| `TURNSTILE_SECRET` | 与 Site Key `0x4AAAAAAF13JTQAycn2077e` 配对的密钥，在 Cloudflare Dashboard → Turnstile → 组件详情页查看 |
+| `VITE_TURNSTILE_SITEKEY` | 前端站点密钥（公开值，默认已内置） |
+| `TURNSTILE_HOSTNAMES` | siteverify 前端主机名白名单，本地默认 `localhost,127.0.0.1` |
+| `JWT_SECRET` | JWT 签名密钥（留空则每次重启自动生成临时密钥） |
+
+填写后重启 `bun run dev` 生效。
+
+⚠️ **本地预览前请确认**：该 Turnstile 组件的域名列表（Dashboard → 组件设置）中包含 `localhost` 与 `127.0.0.1`，否则组件在本地无法完成验证。
+
+### 其他命令
+
+```bash
+bun run build       # 构建前端静态产物到 dist/
+bun run start       # 单进程生产形态：Elysia 同时托管 API 与 dist 静态资源（:3001）
+bun run typecheck   # 全链路 TypeScript 类型检查
+```
+
+## 架构
+
+```
+React 19 + Vite + Mantine v7     Bun 1.1+ 运行时
+┌────────────────────────┐       ┌──────────────────────────┐
+│ 2D 时空涂抹网格         │       │ ElysiaJS (TypeBox 校验)  │
+│ OKLCH 热力图            │ Eden │ argon2id 密码哈希         │
+│ 启发式排程引擎(端侧)     │─────▶│ Turnstile siteverify     │
+│ Temporal API + polyfill │ 全链路│ HMAC-SHA256 JWT          │
+│ Turnstile Widget        │ 类型 │ SQLite + Drizzle (WAL)   │
+└────────────────────────┘ 推导  └──────────────────────────┘
+```
+
+- **前后端通信**：`@elysiajs/eden` treaty，`import type { App }` 从服务端路由定义零样板推导全部请求/响应类型。
+- **时间引擎**：全面采用 TC39 Temporal API（原生优先；旧浏览器按需加载 `temporal-polyfill` 异步分块，见构建产物 `temporal-polyfill-*.js`）。不依赖 dayjs/moment。
+- **色彩引擎**：热力图在 OKLCH 知觉均匀空间插值：`L = Lmin + R·(Lmax−Lmin)`、`C = Cmin + R·(Cmax−Cmin)`、`Hue = 280°`；`R(t) = (N₁ + 0.5·N₂)/N`。
+- **排程引擎**（端侧 <1ms）：`Score(W) = 100·R̄(W) − 25·P_meal − 40·P_late + 8·B_contig`，遍历全部候选窗口输出互不重叠的 Top-3。
+- **安全闭环**：注册/登录嵌入 Turnstile（action `signup`/`login`），服务端 canonical siteverify（success + action + hostname 白名单三重校验）；Token 单次有效，提交后自动 `turnstile.reset()`。
+
+## 目录结构
+
+```
+src/
+├── client/                 # React 前端
+│   ├── api/client.ts       # Eden treaty 客户端 + token 注入
+│   ├── auth/               # 会话上下文与认证弹窗上下文
+│   ├── components/         # TurnstileWidget / TimeSlotPainter / HeatmapBoard / AgentDecisionDeck …
+│   ├── lib/                # temporal / room 几何 / mask 编码 / oklch / scheduler / ics / mock
+│   └── pages/              # HomePage / RoomPage
+├── server/                 # Elysia 后端
+│   ├── api.ts              # 接口契约（§4.2 + 读取接口）
+│   ├── turnstile.ts        # siteverify 服务端校验
+│   ├── jwt.ts              # HMAC-SHA256 轻量 JWT
+│   ├── auth.ts             # Bearer 会话解析
+│   └── db/                 # Drizzle schema + SQLite(WAL) 初始化
+scripts/dev.ts              # 并发进程管理（API + Web）
+```
+
+## 数据流（答辩演示路径）
+
+1. 注册/登录（Turnstile → argon2id → JWT）
+2. 创建房间（Temporal 日期区间 + 每日窗口 + 30 分钟槽位 → `TotalSlots = Days × (End−Start)/0.5`）
+3. 分享短链/二维码（NanoID 8 位短码）
+4. 成员涂抹三态位图（`"110022…"` 等长字符串，极小化载荷）
+5. OKLCH 热力图 + 人员透视浮层（8 秒轮询同步）
+6. 「注入 Mock 数据」一键生成 6 位模拟参与者的冲突日程
+7. 决策甲板 Top-3 卡片（RingProgress 到场率 + 避开饭点/全员到齐/黄金时段标签）
+8. 房主采纳 → canvas-confetti 全屏庆祝 → 房间锁定
+9. 下载 RFC 5545 `.ics`（TZID:Asia/Shanghai + VALARM 提前 15 分钟）或复制 Markdown 群通告
+
+## 部署（后续）
+
+- **前端**：`bun run build` → `dist/` 部署至 Cloudflare Pages；构建时设置 `VITE_API_BASE=https://<后端域名>`。
+- **后端**：闲置云服务器 Systemd 常驻 `bun src/server/index.ts`，Nginx 反代 + Let's Encrypt；`.env` 设置 `TURNSTILE_HOSTNAGES=<Pages 域名>`（切勿包含 localhost）、固定 `JWT_SECRET`。
+- 生产用 `TURNSTILE_HOSTNAMES` 指向真实前端域名，站点密钥不变，仅换白名单。
+
+## 备注
+
+- `.ics` 生成采用自研构造器（`src/client/lib/ics.ts`）而非 `ics` npm 包：规范要求的 `TZID:Asia/Shanghai` + `VTIMEZONE` 块与按 75 字节 UTF-8 边界折叠在 `ics` 包公开 API 中无法表达；自研实现约 100 行且完整覆盖 RFC 5545 关键子集。
+- 热力图/涂抹网格使用共享 CSS Grid 骨架（sticky 表头/时间列）而非 Mantine `Table`：手势拖拽、触控涂抹与 400+ 槽位的渲染性能在原生 div 网格上显著更优，Mantine 组件（Popover/Badge/Tooltip）用于上层交互。
+- 服务端建库采用幂等 DDL（启动时 `CREATE TABLE IF NOT EXISTS`），本地预览零迁移步骤。
