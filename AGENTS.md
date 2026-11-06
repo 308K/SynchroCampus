@@ -48,4 +48,4 @@ SynchroCampus（序时）：React 19 + Vite + Mantine v7 前端，Bun + Elysia 2
 
 - 裸 `curl` 是 Invoke-WebRequest 别名，用 `curl.exe`；内联双引号 JSON 会被 pwsh 破坏——请求体写临时文件 `--data-binary @file`，或 `Invoke-WebRequest -SkipHttpErrorCheck`。
 - 仓库未配置 git identity：提交用 `git -c user.name=... -c user.email=... commit` 或先本地配置。
-- **git 推送（已固化到仓库 config）**：origin 为 HTTPS `https://github.com/308K/SynchroCampus.git` + `http.sslBackend=schannel`——本机网络下 SSH:22 被拦截（198.18.x 虚假 IP）、GitHub 新 KEX 让 ssh-keyscan 失败、OpenSSL 后端 TLS 握手被中间盒掐断（`unexpected eof`）；仅 schannel 可用。gh CLI 已登录（账号 308K）提供 HTTPS 凭据。若推送再失败，先检查代理/VPN 是否接管了 DNS。
+- **git 推送**：origin 为 SSH `git@github.com:308K/SynchroCampus.git`（gh CLI 账号 308K，SSH 认证可用；`known_hosts` 已记录并核对过 GitHub 官方 ED25519 指纹）。历史备注：本机曾因代理接管 DNS（198.18.x 虚假 IP）导致 SSH 不可用，当时临时切过 HTTPS+schannel；若推送再报 `Connection closed by 198.18.x`，是代理/VPN 又接管了 DNS，关闭或切换分流规则即可，勿改 remote。
