@@ -15,6 +15,8 @@ SynchroCampus（序时）：React 19 + Vite + Mantine v7 前端，Bun + Elysia 2
 - `TURNSTILE_SECRET` 未配置时注册/登录返回 503 引导；配置后假 token 被真实 siteverify 拒 403。smoke 按 env 有无断言两种分支，别改死。
 - Windows 上 Vite watcher 可能漏掉外部工具写入的文件，浏览器跑旧模块。**磁盘新但页面旧 → 重启 `bun run dev`**；可用 `curl.exe -s http://localhost:5173/src/client/<file>.ts` 对比 Vite 实际serve 的内容确认。
 - `bun run build` 产出 `dist/` 后，:3001 会变成 SPA 托管（含 SW 注册）；开发期请走 :5173。
+- `bunx vite preview` **默认继承 `server.proxy`**（/api 会被代理到 :3001），不能当作「无后端」环境测试前端降级逻辑；需要无 API 环境时用纯静态服务（如 `Bun.serve` 直接读 dist/）。
+- 启动自检：`App.tsx` 的 `ApiHealthGuard` 加载后 ping 一次 `/api/health`（`pingApi()`，5s 超时），仅在不通时弹通知；改通知文案时遵守 UI 硬规则。
 
 ## 后端约定（Elysia 2 rc）
 
