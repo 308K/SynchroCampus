@@ -1,10 +1,14 @@
-// 服务端入口：Elysia + Bun
+// 服务端入口：Elysia 2 + Bun
 import { existsSync, statSync } from 'node:fs'
 import { Elysia } from 'elysia'
-import { cors } from '@elysiajs/cors'
+import { cors } from '@elysia/cors'
 import { app } from './api'
+import { ensureDemoData } from './demo'
 
 const port = Number(process.env.PORT ?? 3001)
+
+// 演示模式种子数据（幂等）
+ensureDemoData()
 
 const root = new Elysia().use(cors()).use(app)
 

@@ -45,7 +45,7 @@ export function SharePopover({ roomId }: SharePopoverProps) {
           } />
           {qr && <Image src={qr} maw={200} mx="auto" radius="sm" alt="房间邀请二维码" />}
           <Text size="xs" c="dimmed" ta="center">
-            微信/QQ 扫码或转发链接，成员无需注册即可涂抹时间
+            微信/QQ扫码或转发链接，成员无需注册即可涂抹时间
           </Text>
         </Stack>
       </Popover.Dropdown>

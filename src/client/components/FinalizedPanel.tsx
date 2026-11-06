@@ -19,7 +19,7 @@ export function FinalizedPanel({ room, slot, participants, inviteLink }: Finaliz
   const icsContent = buildIcs({
     uid: `${room.id}-${slot.date}-${slot.startTime.replace(':', '')}@synchrocampus`,
     title: room.title,
-    description: `由「序时 SynchroCampus」群体日程自协同智能体定案 · 参与人：${names.join('、')} · 房间：${inviteLink}`,
+    description: `由「序时SynchroCampus」群体日程自协同智能体定案，参与人：${names.join('、')}，房间：${inviteLink}`,
     date: slot.date,
     startTime: slot.startTime,
     endTime: slot.endTime,
@@ -32,14 +32,14 @@ export function FinalizedPanel({ room, slot, participants, inviteLink }: Finaliz
       <Group justify="space-between" wrap="nowrap">
         <Stack gap={2}>
           <Text fw={700} fz="lg">
-            {fmtDateFull(date)} {slot.startTime} – {slot.endTime}
+            {fmtDateFull(date)}·{slot.startTime}–{slot.endTime}
           </Text>
           <Text size="xs" c="dimmed">
-            时区 Asia/Shanghai · 内置提前 15 分钟提醒
+            时区Asia/Shanghai，内置提前15分钟提醒
           </Text>
         </Stack>
         <Badge color="brand" variant="light" size="lg">
-          {room.durationMinutes} 分钟
+          {room.durationMinutes}分钟
         </Badge>
       </Group>
       <Group gap="sm">
@@ -60,8 +60,7 @@ export function FinalizedPanel({ room, slot, participants, inviteLink }: Finaliz
         </CopyButton>
       </Group>
       <Text size="xs" c="dimmed">
-        .ics 为 RFC 5545 标准格式，点击即可唤起 Apple Calendar、Google Calendar、华为/小米日历；通告文本可直接粘贴至微信或
-        QQ 群。
+        .ics为RFC 5545标准格式，点击即可唤起Apple Calendar、Google Calendar、华为/小米日历；通告文本可直接粘贴至微信或QQ群。
       </Text>
     </Stack>
   )

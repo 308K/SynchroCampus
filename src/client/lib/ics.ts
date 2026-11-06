@@ -87,7 +87,7 @@ export function buildIcs(opts: IcsEventOptions): string {
     'BEGIN:VALARM',
     `TRIGGER:-PT${alarm}M`,
     'ACTION:DISPLAY',
-    `DESCRIPTION:${escapeText(`提前 ${alarm} 分钟提醒：${opts.title}`)}`,
+    `DESCRIPTION:${escapeText(`提前${alarm}分钟提醒：${opts.title}`)}`,
     'END:VALARM',
     'END:VEVENT',
     'END:VCALENDAR',

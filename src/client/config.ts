@@ -1,5 +1,5 @@
 // 前端公共配置
-export const APP_NAME = '序时 SynchroCampus'
+export const APP_NAME = '序时SynchroCampus'
 export const APP_TAGLINE = '群体日程自协同决策智能体'
 
 /** Cloudflare Turnstile 站点密钥（公开值，可用 .env 的 VITE_TURNSTILE_SITEKEY 覆盖） */

@@ -1,5 +1,5 @@
 // Eden Treaty 全链路类型安全客户端（类型零样板推导）
-import { treaty } from '@elysiajs/eden'
+import { treaty } from '@elysia/eden'
 import type { App } from '../../server/api'
 
 const TOKEN_KEY = 'sc_token'
@@ -13,6 +13,9 @@ export const tokenStore = {
 const baseURL = (import.meta.env.VITE_API_BASE as string | undefined) ?? window.location.origin
 
 const treatyClient = treaty<App>(baseURL, {
+  // 关闭 Eden 的响应日期自动转换：本项目的 startDate/endDate 是纯日期字符串，
+  // 必须保持 string 形态交给 Temporal.PlainDate 处理（转成 Date 会丢失"仅日期"语义并带时区偏移）
+  parseDate: false,
   headers: () => {
     const token = tokenStore.get()
     return token ? { authorization: `Bearer ${token}` } : {}
@@ -43,9 +46,12 @@ function extractMessage(value: unknown, status: number): string {
 /** 解包 Eden 响应：成功取 data，失败抛出带状态的 ApiError */
 export async function unwrap<T>(res: {
   data: T | null
-  error: { status: number; value: unknown } | null
+  error: { status: unknown; value: unknown } | null
 }): Promise<T> {
-  if (res.error) throw new ApiError(res.error.status, extractMessage(res.error.value, res.error.status))
+  if (res.error) {
+    const status = typeof res.error.status === 'number' ? res.error.status : 0
+    throw new ApiError(status, extractMessage(res.error.value, status))
+  }
   if (res.data === null || res.data === undefined) throw new ApiError(0, '服务端返回了空响应。')
   return res.data
 }

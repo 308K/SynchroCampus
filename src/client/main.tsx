@@ -18,3 +18,12 @@ createRoot(document.getElementById('root')!).render(
     </MantineProvider>
   </React.StrictMode>,
 )
+
+// PWA：生产构建注册 Service Worker（开发环境不注册，避免缓存干扰热更新）
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* 离线能力降级：注册失败不影响主流程 */
+    })
+  })
+}

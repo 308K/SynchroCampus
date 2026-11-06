@@ -29,7 +29,7 @@ function loadTurnstileScript(): Promise<void> {
       script.addEventListener('load', () => resolve())
       script.addEventListener('error', () => {
         scriptPromise = null
-        reject(new Error('Turnstile 脚本加载失败，请检查网络后刷新重试。'))
+        reject(new Error('Turnstile脚本加载失败，请检查网络后刷新重试。'))
       })
       document.head.appendChild(script)
     })

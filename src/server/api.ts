@@ -1,5 +1,6 @@
-// Elysia API 接口契约
-// 依据《SynchroCampus 需求规格说明书》§4.2，并补充前端渲染所需的读取接口
+// Elysia 2 API 接口契约
+// 依据《SynchroCampus 需求规格说明书》§4.2，并补充前端渲染所需的读取接口与演示模式
+// Elysia 2 约定：schema 位于 handler 之前（.post(path, schema, handler)）
 // 使用 status() 辅助返回错误，保证 Eden 全链路类型精确（data 仅含成功形态）
 import { Elysia, t, status } from 'elysia'
 import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
@@ -10,6 +11,7 @@ import { participants, rooms, users, type RoomRow } from './db/schema'
 import { clientIp, currentUser, type AuthUser } from './auth'
 import { getJwtSecret, signJwt } from './jwt'
 import { verifyTurnstileToken } from './turnstile'
+import { DEMO_ROOM_ID, DEMO_USER_ID, DEMO_USERNAME, ensureDemoData, resetDemoData } from './demo'
 
 /** 受保护表面的稳定 action（与前端 TurnstileWidget 的 action 一一对应） */
 const TURNSTILE_ACTIONS = { register: 'signup', login: 'login' } as const
@@ -70,6 +72,13 @@ export const app = new Elysia({ prefix: '/api' })
   // 1. 用户注册（带 Turnstile 验证）
   .post(
     '/auth/register',
+    {
+      body: t.Object({
+        username: t.String({ minLength: 3, maxLength: 20 }),
+        password: t.String({ minLength: 6, maxLength: 32 }),
+        turnstileToken: t.String(),
+      }),
+    },
     async ({ body, headers }) => {
       const verdict = await verifyTurnstileToken({
         token: body.turnstileToken,
@@ -85,18 +94,18 @@ export const app = new Elysia({ prefix: '/api' })
       const token = await issueToken({ id, username: body.username })
       return { token, user: { id, username: body.username } }
     },
-    {
-      body: t.Object({
-        username: t.String({ minLength: 3, maxLength: 20 }),
-        password: t.String({ minLength: 6, maxLength: 32 }),
-        turnstileToken: t.String(),
-      }),
-    },
   )
 
   // 2. 用户登录（带 Turnstile 验证）
   .post(
     '/auth/login',
+    {
+      body: t.Object({
+        username: t.String(),
+        password: t.String(),
+        turnstileToken: t.String(),
+      }),
+    },
     async ({ body, headers }) => {
       const verdict = await verifyTurnstileToken({
         token: body.turnstileToken,
@@ -111,13 +120,6 @@ export const app = new Elysia({ prefix: '/api' })
       const token = await issueToken({ id: user.id, username: user.username })
       return { token, user: { id: user.id, username: user.username } }
     },
-    {
-      body: t.Object({
-        username: t.String(),
-        password: t.String(),
-        turnstileToken: t.String(),
-      }),
-    },
   )
 
   // 当前登录态校验（前端恢复会话用）
@@ -126,19 +128,44 @@ export const app = new Elysia({ prefix: '/api' })
     return { user: { id: user.id, username: user.username } }
   })
 
+  // 演示模式：免登录进入示例房间（签发演示房主会话）
+  .post('/demo/enter', async () => {
+    ensureDemoData()
+    const token = await issueToken({ id: DEMO_USER_ID, username: DEMO_USERNAME })
+    return { token, roomId: DEMO_ROOM_ID, username: DEMO_USERNAME }
+  })
+
+  // 演示模式：重置示例数据（仅演示会话）
+  .post('/demo/reset', ({ user }) => {
+    if (!user || user.id !== DEMO_USER_ID) return err(403, '仅演示会话可重置演示数据。')
+    resetDemoData()
+    return { ok: true }
+  })
+
   // 3. 房间创建
   .post(
     '/rooms',
+    {
+      body: t.Object({
+        title: t.String({ minLength: 2, maxLength: 50 }),
+        durationMinutes: t.Number({ minimum: 30, maximum: 240 }),
+        startDate: t.String(),
+        endDate: t.String(),
+        startHour: t.Number({ minimum: 0, maximum: 23 }),
+        endHour: t.Number({ minimum: 1, maximum: 24 }),
+      }),
+    },
     ({ body, user }) => {
       if (!user) return err(401, '请先登录后再创建房间。')
+      if (user.id === DEMO_USER_ID) return err(403, '演示会话仅操作演示房间，请注册正式账号创建房间。')
       if (!isIsoDate(body.startDate) || !isIsoDate(body.endDate)) {
-        return err(400, '起止日期必须为合法的 YYYY-MM-DD 格式。')
+        return err(400, '起止日期必须为合法的YYYY-MM-DD格式。')
       }
       if (body.startDate > body.endDate) return err(400, '起始日期不能晚于结束日期。')
       const { days } = roomGeometry(body)
-      if (days > MAX_ROOM_DAYS) return err(400, `日期跨度最多 ${MAX_ROOM_DAYS} 天（当前 ${days} 天）。`)
+      if (days > MAX_ROOM_DAYS) return err(400, `日期跨度最多${MAX_ROOM_DAYS}天（当前${days}天）。`)
       if (body.startHour >= body.endHour) return err(400, '每日时段的结束小时必须大于起始小时。')
-      if (body.durationMinutes % 30 !== 0) return err(400, '会议时长必须为 30 分钟的整数倍。')
+      if (body.durationMinutes % 30 !== 0) return err(400, '会议时长必须为30分钟的整数倍。')
       if (body.durationMinutes > (body.endHour - body.startHour) * 60) {
         return err(400, '会议时长不能超过每日排程窗口。')
       }
@@ -156,16 +183,6 @@ export const app = new Elysia({ prefix: '/api' })
       }
       db.insert(rooms).values(row).run()
       return { room: { ...publicRoom(row as RoomRow), createdAt: row.createdAt } }
-    },
-    {
-      body: t.Object({
-        title: t.String({ minLength: 2, maxLength: 50 }),
-        durationMinutes: t.Number({ minimum: 30, maximum: 240 }),
-        startDate: t.String(),
-        endDate: t.String(),
-        startHour: t.Number({ minimum: 0, maximum: 23 }),
-        endHour: t.Number({ minimum: 1, maximum: 24 }),
-      }),
     },
   )
 
@@ -197,6 +214,7 @@ export const app = new Elysia({ prefix: '/api' })
   // 房间详情（含全员时间掩码，用于热力图与决策引擎）
   .get(
     '/rooms/:id',
+    { params: t.Object({ id: t.String() }) },
     ({ params: { id }, user }) => {
       const room = db.select().from(rooms).where(eq(rooms.id, id)).get()
       if (!room) return err(404, '房间不存在，请检查邀请链接是否正确。')
@@ -217,19 +235,25 @@ export const app = new Elysia({ prefix: '/api' })
         isOwner: Boolean(user && user.id === room.ownerId),
       }
     },
-    { params: t.Object({ id: t.String() }) },
   )
 
   // 4. 提交/更新个人时间掩码
   .post(
     '/rooms/:id/availability',
+    {
+      params: t.Object({ id: t.String() }),
+      body: t.Object({
+        nickname: t.String({ minLength: 1, maxLength: 20 }),
+        availabilityMask: t.String(),
+      }),
+    },
     ({ params: { id }, body, user }) => {
       const room = db.select().from(rooms).where(eq(rooms.id, id)).get()
       if (!room) return err(404, '房间不存在。')
       if (room.finalizedSlot) return err(403, '房间已定案锁定，无法再修改时间。')
       const { totalSlots } = roomGeometry(room)
       if (!MASK_RE.test(body.availabilityMask) || body.availabilityMask.length !== totalSlots) {
-        return err(400, `时间掩码格式非法：应为长度 ${totalSlots}、仅含 0/1/2 的字符串。`)
+        return err(400, `时间掩码格式非法：应为长度${totalSlots}、仅含0/1/2的字符串。`)
       }
       const now = new Date()
       const existing = user
@@ -268,18 +292,15 @@ export const app = new Elysia({ prefix: '/api' })
         .run()
       return { participant: { id: pid, nickname: body.nickname, availabilityMask: body.availabilityMask } }
     },
-    {
-      params: t.Object({ id: t.String() }),
-      body: t.Object({
-        nickname: t.String({ minLength: 1, maxLength: 20 }),
-        availabilityMask: t.String(),
-      }),
-    },
   )
 
   // 5. 房主定案锁定
   .post(
     '/rooms/:id/finalize',
+    {
+      params: t.Object({ id: t.String() }),
+      body: t.Object({ selectedSlot: t.String() }),
+    },
     ({ params: { id }, body, user }) => {
       const room = db.select().from(rooms).where(eq(rooms.id, id)).get()
       if (!room) return err(404, '房间不存在。')
@@ -289,7 +310,7 @@ export const app = new Elysia({ prefix: '/api' })
       try {
         slot = JSON.parse(body.selectedSlot)
       } catch {
-        return err(400, '定案时段 JSON 解析失败。')
+        return err(400, '定案时段JSON解析失败。')
       }
       if (
         !isIsoDate(slot.date) ||
@@ -297,7 +318,7 @@ export const app = new Elysia({ prefix: '/api' })
         !TIME_RE.test(slot.endTime) ||
         slot.startTime >= slot.endTime
       ) {
-        return err(400, '定案时段参数非法（需要 YYYY-MM-DD 与 HH:MM，且结束晚于开始）。')
+        return err(400, '定案时段参数非法（需要YYYY-MM-DD与HH:MM，且结束晚于开始）。')
       }
       if (slot.date < room.startDate || slot.date > room.endDate) {
         return err(400, '定案日期超出房间日期范围。')
@@ -306,13 +327,13 @@ export const app = new Elysia({ prefix: '/api' })
       const startMin = toMinutes(slot.startTime)
       const endMin = toMinutes(slot.endTime)
       if (startMin % 30 !== 0 || endMin % 30 !== 0) {
-        return err(400, '定案时段必须与 30 分钟槽位对齐。')
+        return err(400, '定案时段必须与30分钟槽位对齐。')
       }
       if (startMin < room.startHour * 60 || endMin > room.endHour * 60) {
         return err(400, '定案时段超出每日排程窗口。')
       }
       if (endMin - startMin !== room.durationMinutes) {
-        return err(400, `定案时长应等于会议时长（${room.durationMinutes} 分钟）。`)
+        return err(400, `定案时长应等于会议时长（${room.durationMinutes}分钟）。`)
       }
       const normalized = JSON.stringify({
         date: slot.date,
@@ -321,10 +342,6 @@ export const app = new Elysia({ prefix: '/api' })
       })
       db.update(rooms).set({ finalizedSlot: normalized }).where(eq(rooms.id, id)).run()
       return { room: { ...publicRoom(room), finalizedSlot: normalized } }
-    },
-    {
-      params: t.Object({ id: t.String() }),
-      body: t.Object({ selectedSlot: t.String() }),
     },
   )
 

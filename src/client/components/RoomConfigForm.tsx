@@ -39,7 +39,7 @@ export function RoomConfigForm({ onCreated }: RoomConfigFormProps) {
     }
     const days = dateRange(startISO, endISO).length
     if (days > MAX_ROOM_DAYS) {
-      notifications.show({ color: 'red', message: `日期跨度最多 ${MAX_ROOM_DAYS} 天（当前 ${days} 天）。` })
+      notifications.show({ color: 'red', message: `日期跨度最多${MAX_ROOM_DAYS}天（当前${days}天）。` })
       return
     }
     const [startHour, endHour] = hours
@@ -94,7 +94,7 @@ export function RoomConfigForm({ onCreated }: RoomConfigFormProps) {
               allowSingleDateInRange
             />
             <Text size="xs" c="dimmed" mt={4}>
-              横轴将按 Temporal.PlainDate 展开为离散日期列
+              横轴将按Temporal.PlainDate展开为离散日期列
             </Text>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -122,7 +122,7 @@ export function RoomConfigForm({ onCreated }: RoomConfigFormProps) {
               pb="xl"
             />
             <Text size="xs" c="dimmed" mt={-28}>
-              纵轴按 30 分钟粒度离散化为槽位（Slot）
+              纵轴按30分钟粒度离散化为槽位（Slot）
             </Text>
           </Grid.Col>
         </Grid>
@@ -143,7 +143,7 @@ export function RoomConfigForm({ onCreated }: RoomConfigFormProps) {
               { value: 180, label: '3时' },
               { value: 240, label: '4时' },
             ]}
-            label={(v) => `${v} 分钟`}
+            label={(v) => `${v}分钟`}
             labelAlwaysOn
             pb="xl"
           />

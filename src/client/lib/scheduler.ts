@@ -94,9 +94,9 @@ export function windowTags(w: ScoredWindow, rank: number): WindowTag[] {
 }
 
 export function scoreBreakdownText(w: ScoredWindow): string {
-  const parts = [`到场率 ${(w.avgR * 100).toFixed(0)}%`]
-  if (w.mealPenalty) parts.push(`餐时冲突 −${WEIGHTS.meal}`)
-  if (w.latePenalty) parts.push(`夜间惩罚 −${WEIGHTS.late}`)
-  if (w.contigBonus > 0) parts.push(`连续缓冲 +${(WEIGHTS.contig * w.contigBonus).toFixed(0)}`)
-  return `${parts.join(' · ')} → 综合 ${w.score.toFixed(1)}`
+  const parts = [`到场率${(w.avgR * 100).toFixed(0)}%`]
+  if (w.mealPenalty) parts.push(`餐时冲突−${WEIGHTS.meal}`)
+  if (w.latePenalty) parts.push(`夜间惩罚−${WEIGHTS.late}`)
+  if (w.contigBonus > 0) parts.push(`连续缓冲+${(WEIGHTS.contig * w.contigBonus).toFixed(0)}`)
+  return `${parts.join('，')}，综合${w.score.toFixed(1)}`
 }

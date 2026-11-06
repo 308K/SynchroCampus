@@ -52,7 +52,9 @@ export function SlotGrid({ room, renderCell, paintable, gridRef, ...handlers }: 
         ref={gridRef}
         className="sc-grid"
         data-paintable={paintable ? 'true' : 'false'}
-        style={{ gridTemplateColumns: `52px repeat(${days.length}, minmax(46px, 1fr))` }}
+        style={{
+          gridTemplateColumns: `var(--sc-time-w, 52px) repeat(${days.length}, minmax(var(--sc-cell-w, 46px), 1fr))`,
+        }}
         onPointerDown={handlers.onPointerDown}
         onPointerMove={handlers.onPointerMove}
         onPointerUp={handlers.onPointerUp}

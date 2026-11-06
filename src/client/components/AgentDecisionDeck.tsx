@@ -30,8 +30,7 @@ export function AgentDecisionDeck({
   if (participants.length === 0) {
     return (
       <Alert color="brand" variant="light" title="等待群体时空数据">
-        目前还没有人提交时间偏好。先在「我的时间」标签页涂抹你的空闲时段，或点击顶部「注入 Mock
-        数据」一键生成多方冲突演示。
+        目前还没有人提交时间偏好。先在「我的时间」标签页涂抹你的空闲时段，或点击顶部「注入Mock数据」一键生成多方冲突演示。
       </Alert>
     )
   }
@@ -41,8 +40,7 @@ export function AgentDecisionDeck({
       <Group gap="sm">
         <IconSparkles size={18} color="var(--mantine-color-brand-6)" />
         <Text size="sm" c="dimmed">
-          端侧启发式约束规划已遍历全部候选窗口（到场率 ×100 / 餐时 −25 / 夜间 −40 / 连续性 +8），以下为全局最优
-          Top 3：
+          端侧启发式约束规划已遍历全部候选窗口（到场率×100/餐时−25/夜间−40/连续性+8），以下为全局最优Top 3：
         </Text>
       </Group>
       <SimpleGrid cols={{ base: 1, sm: 1, md: 3 }}>
@@ -96,7 +94,7 @@ export function AgentDecisionDeck({
                   />
                   <Stack gap={4} style={{ flex: 1 }}>
                     <Text size="xs" c="dimmed">
-                      平均到场率 {Math.round(w.avgR * 100)}%
+                      平均到场率{Math.round(w.avgR * 100)}%
                     </Text>
                     <Text size="xs" c="dimmed">
                       {scoreBreakdownText(w)}

@@ -16,7 +16,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import confetti from 'canvas-confetti'
-import { IconArrowLeft, IconFlask, IconLock } from '@tabler/icons-react'
+import { IconArrowLeft, IconFlask, IconLock, IconRefresh } from '@tabler/icons-react'
 import { api, unwrap, ApiError, tokenStore } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { AgentDecisionDeck } from '../components/AgentDecisionDeck'
@@ -64,6 +64,7 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
   const [mask, setMask] = useState<number[] | null>(null)
   const [saving, setSaving] = useState(false)
   const [injecting, setInjecting] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [finalizing, setFinalizing] = useState<ScoredWindow | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const maskInitRef = useRef(false)
@@ -152,12 +153,28 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
           }),
         )
       }
-      notifications.show({ color: 'brand', message: `已注入 ${MOCK_NAMES.length} 位模拟参与者的冲突日程` })
+      notifications.show({ color: 'brand', message: `已注入${MOCK_NAMES.length}位模拟参与者的冲突日程` })
       await fetchRoom(true)
     } catch (err) {
-      notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : 'Mock 注入失败' })
+      notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : 'Mock注入失败' })
     } finally {
       setInjecting(false)
+    }
+  }
+
+  const handleResetDemo = async () => {
+    if (!data) return
+    setResetting(true)
+    try {
+      await unwrap(await api.demo.reset.post())
+      maskInitRef.current = false
+      setMask(null)
+      notifications.show({ color: 'brand', message: '演示数据已重置为初始示例状态' })
+      await fetchRoom(true)
+    } catch (err) {
+      notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : '重置失败' })
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -207,20 +224,26 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
   }
 
   const { room, participants, isOwner } = data
+  const isDemo = user?.id === 'demo-owner'
   const inviteLink = `${window.location.origin}/#/room/${room.id}`
   const myNickname = nickname.trim() || user?.username
-  const dateSpan = `${room.startDate} ~ ${room.endDate}（${daysOf(room)} 天）`
+  const dateSpan = `${room.startDate}~${room.endDate}（${daysOf(room)}天）`
 
   return (
     <Stack gap="md" maw={1180} mx="auto" w="100%">
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Group gap="sm" wrap="nowrap">
+      <Group justify="space-between" align="flex-start" wrap="wrap">
+        <Group gap="sm" wrap="wrap">
           <Button variant="subtle" size="compact-sm" leftSection={<IconArrowLeft size={14} />} onClick={() => navigate('/')}>
             首页
           </Button>
           <Title order={3} lineClamp={1}>
             {room.title}
           </Title>
+          {isDemo && (
+            <Badge color="grape" variant="light">
+              演示会话
+            </Badge>
+          )}
           {finalized ? (
             <Badge color="brand" variant="light" leftSection={<IconLock size={11} />}>
               已定案
@@ -231,7 +254,18 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
             </Badge>
           )}
         </Group>
-        <Group gap="sm" wrap="nowrap">
+        <Group gap="sm" wrap="wrap">
+          {isDemo && !finalized && (
+            <Button
+              variant="light"
+              color="gray"
+              leftSection={<IconRefresh size={16} />}
+              loading={resetting}
+              onClick={() => void handleResetDemo()}
+            >
+              重置演示
+            </Button>
+          )}
           {!finalized && (
             <Button
               variant="light"
@@ -240,7 +274,7 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
               loading={injecting}
               onClick={() => void handleInjectMock()}
             >
-              注入 Mock 数据
+              注入Mock数据
             </Button>
           )}
           <SharePopover roomId={room.id} />
@@ -253,15 +287,15 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
             📅 {dateSpan}
           </Text>
           <Text size="sm" c="dimmed">
-            🕐 每日 {room.startHour}:00–{room.endHour}:00
+            🕐 每日{room.startHour}:00–{room.endHour}:00
           </Text>
           <Text size="sm" c="dimmed">
-            ⏱️ 时长 {room.durationMinutes} 分钟
+            ⏱️ 时长{room.durationMinutes}分钟
           </Text>
           <Text size="sm" c="dimmed">
-            👥 {participants.length} 人已提交
+            👥 {participants.length}人已提交
           </Text>
-          {isOwner && (
+          {isOwner && !isDemo && (
             <Text size="sm" c="brand" fw={600}>
               你是房主
             </Text>
@@ -323,7 +357,7 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
                 保存我的时间
               </Button>
               <Text size="xs" c="dimmed" mb="calc(0.375rem)">
-                掩码将序列化为等长位图传输（当前 {mask.length} 槽位）
+                掩码将序列化为等长位图传输（当前{mask.length}槽位）
               </Text>
             </Group>
             <TimeSlotPainter

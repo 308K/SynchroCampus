@@ -14,13 +14,13 @@ export function buildNoticeMarkdown(
     '',
     `经全员空闲时段碰撞协商，本次安排最终定案如下：`,
     '',
-    `- **时间**：${date} ${slot.startTime} – ${slot.endTime}（北京时间）`,
-    `- **时长**：${room.durationMinutes} 分钟`,
-    `- **参与**：${participantNames.length} 人（${names}）`,
-    '- **提醒**：已内置日历提醒，将提前 15 分钟提示就位',
+    `- **时间**：${date}·${slot.startTime}–${slot.endTime}（北京时间）`,
+    `- **时长**：${room.durationMinutes}分钟`,
+    `- **参与**：${participantNames.length}人（${names}）`,
+    '- **提醒**：已内置日历提醒，将提前15分钟提示就位',
     '',
     '> 请各位把该时段加入个人日历；如临时有事，请尽快在群内发起改期。',
-    '> —— 本通知由「序时 SynchroCampus」群体日程自协同智能体自动生成',
+    '> ——本通知由「序时SynchroCampus」群体日程自协同智能体自动生成',
   ].join('\n')
 }
 

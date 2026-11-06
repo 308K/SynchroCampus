@@ -12,6 +12,8 @@ interface AuthContextValue {
   ready: boolean
   login: (username: string, password: string, turnstileToken: string) => Promise<void>
   register: (username: string, password: string, turnstileToken: string) => Promise<void>
+  /** 演示模式：接管服务端签发的演示会话 */
+  adoptSession: (token: string, user: AuthUser) => void
   logout: () => void
 }
 
@@ -56,14 +58,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
   }, [])
 
+  const adoptSession = useCallback((token: string, next: AuthUser) => {
+    tokenStore.set(token)
+    setUser(next)
+  }, [])
+
   const logout = useCallback(() => {
     tokenStore.clear()
     setUser(null)
   }, [])
 
   const value = useMemo(
-    () => ({ user, ready, login, register, logout }),
-    [user, ready, login, register, logout],
+    () => ({ user, ready, login, register, adoptSession, logout }),
+    [user, ready, login, register, adoptSession, logout],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

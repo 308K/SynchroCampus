@@ -117,13 +117,58 @@ async function main() {
     })
     check('匿名用户定案被拒（403）', anonFin.status === 403)
 
-    // 11) Turnstile 缺失 secret 的注册被拒（503）
+    // 11) Turnstile 校验闭环：
+    //     未配置 secret → 503 引导；已配置 secret → 假 token 被 siteverify 拒绝（403）
     const ts = await fetch(`${BASE}/auth/register`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ username: 'someone', password: 'secret123', turnstileToken: 'dummy' }),
     })
-    check('未配置 TURNSTILE_SECRET 时注册返回引导（503）', ts.status === 503)
+    const secretConfigured = Boolean(process.env.TURNSTILE_SECRET?.trim())
+    check(
+      secretConfigured ? '假 Turnstile Token 被 siteverify 拒绝（403）' : '未配置 TURNSTILE_SECRET 时注册返回引导（503）',
+      ts.status === (secretConfigured ? 403 : 503),
+      `status=${ts.status}`,
+    )
+
+    // 12) 演示模式：免登录进入示例房间
+    const demo = (await fetch(`${BASE}/demo/enter`, { method: 'POST' }).then((r) => r.json())) as {
+      token: string
+      roomId: string
+      username: string
+    }
+    check('POST /demo/enter 签发演示会话', Boolean(demo.token) && demo.roomId === 'demo', `roomId=${demo.roomId}`)
+    const demoHeaders = { 'content-type': 'application/json', authorization: `Bearer ${demo.token}` }
+
+    // 13) 演示房间含 6 位示例参与者且演示会话为房主
+    const demoRoom = (await fetch(`${BASE}/rooms/demo`, { headers: demoHeaders }).then((r) => r.json())) as {
+      participants: unknown[]
+      isOwner: boolean
+    }
+    check('演示房间示例数据就绪（6人+房主视角）', demoRoom.participants.length === 6 && demoRoom.isOwner === true)
+
+    // 14) 演示会话可重置示例数据
+    const demoReset = await fetch(`${BASE}/demo/reset`, { method: 'POST', headers: demoHeaders })
+    check('POST /demo/reset 演示会话可重置', demoReset.status === 200)
+
+    // 15) 演示会话不能创建正式房间
+    const demoCreate = await fetch(`${BASE}/rooms`, {
+      method: 'POST',
+      headers: demoHeaders,
+      body: JSON.stringify({
+        title: '不应成功',
+        durationMinutes: 60,
+        startDate: '2026-11-09',
+        endDate: '2026-11-10',
+        startHour: 8,
+        endHour: 22,
+      }),
+    })
+    check('演示会话创建房间被拒（403）', demoCreate.status === 403)
+
+    // 16) 匿名用户不能重置演示数据
+    const anonReset = await fetch(`${BASE}/demo/reset`, { method: 'POST' })
+    check('匿名用户重置演示被拒（403）', anonReset.status === 403)
   } finally {
     // 清理：删除测试用户（级联清理其房间与参与者）
     db.delete(rooms).where(eq(rooms.ownerId, uid)).run()

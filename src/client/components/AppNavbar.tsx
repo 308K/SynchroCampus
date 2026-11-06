@@ -26,7 +26,7 @@ export function AppNavbar({ onOpenAuth }: AppNavbarProps) {
           <Text fw={800} lh={1}>
             {APP_NAME}
           </Text>
-          <Text size="xs" c="dimmed" lh={1.3}>
+          <Text size="xs" c="dimmed" lh={1.3} className="sc-tagline">
             群体日程自协同决策智能体
           </Text>
         </div>

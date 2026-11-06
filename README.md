@@ -16,6 +16,11 @@ bun run dev          # 一键并发启动：API :3001（watch 热重载）+ Web 
 
 打开 <http://localhost:5173> 即可预览。`Ctrl+C` 一键停止全部进程。
 
+### 演示模式（免登录）
+
+首页「进入演示模式」一键载入示例房间：7 天窗口、6 位模拟成员的全周冲突掩码、演示房主会话（可定案、可重置）。
+演示数据按日期滚动：跨天后自动重置；房间内「重置演示」按钮可随时恢复初始示例状态。
+
 ### Turnstile 配置（必须）
 
 注册/登录前，需要在 `.env` 中补齐 Cloudflare Turnstile 的 **Secret Key**：
@@ -37,6 +42,8 @@ bun run dev          # 一键并发启动：API :3001（watch 热重载）+ Web 
 bun run build       # 构建前端静态产物到 dist/
 bun run start       # 单进程生产形态：Elysia 同时托管 API 与 dist 静态资源（:3001）
 bun run typecheck   # 全链路 TypeScript 类型检查
+bun scripts/smoke.ts    # 端到端 API 冒烟测试（17 项断言）
+bun scripts/gen-icons.ts # 重新生成 PWA 图标（pngjs 像素绘制）
 ```
 
 ## 架构
@@ -44,19 +51,23 @@ bun run typecheck   # 全链路 TypeScript 类型检查
 ```
 React 19 + Vite + Mantine v7     Bun 1.1+ 运行时
 ┌────────────────────────┐       ┌──────────────────────────┐
-│ 2D 时空涂抹网格         │       │ ElysiaJS (TypeBox 校验)  │
-│ OKLCH 热力图            │ Eden │ argon2id 密码哈希         │
+│ 2D 时空涂抹网格         │       │ Elysia 2（schema-first） │
+│ OKLCH 热力图            │ Eden 2│ argon2id 密码哈希         │
 │ 启发式排程引擎(端侧)     │─────▶│ Turnstile siteverify     │
 │ Temporal API + polyfill │ 全链路│ HMAC-SHA256 JWT          │
 │ Turnstile Widget        │ 类型 │ SQLite + Drizzle (WAL)   │
-└────────────────────────┘ 推导  └──────────────────────────┘
+│ PWA（manifest+SW）      │ 推导  └──────────────────────────┘
+└────────────────────────┘
 ```
 
-- **前后端通信**：`@elysiajs/eden` treaty，`import type { App }` 从服务端路由定义零样板推导全部请求/响应类型。
+- **前后端通信**：`@elysia/eden` treaty 2，`import type { App }` 从服务端路由定义零样板推导全部请求/响应类型。注意配置 `parseDate: false`：本项目 `startDate/endDate` 是纯日期字符串，必须保持 string 交给 Temporal 处理（Eden 默认会把日期样字符串转成 Date，丢失"仅日期"语义）。
 - **时间引擎**：全面采用 TC39 Temporal API（原生优先；旧浏览器按需加载 `temporal-polyfill` 异步分块，见构建产物 `temporal-polyfill-*.js`）。不依赖 dayjs/moment。
 - **色彩引擎**：热力图在 OKLCH 知觉均匀空间插值：`L = Lmin + R·(Lmax−Lmin)`、`C = Cmin + R·(Cmax−Cmin)`、`Hue = 280°`；`R(t) = (N₁ + 0.5·N₂)/N`。
 - **排程引擎**（端侧 <1ms）：`Score(W) = 100·R̄(W) − 25·P_meal − 40·P_late + 8·B_contig`，遍历全部候选窗口输出互不重叠的 Top-3。
-- **安全闭环**：注册/登录嵌入 Turnstile（action `signup`/`login`），服务端 canonical siteverify（success + action + hostname 白名单三重校验）；Token 单次有效，提交后自动 `turnstile.reset()`。
+- **安全闭环**：注册/登录嵌入 Turnstile（action `signup`/`login`），服务端 canonical siteverify（success + action + hostname 白名单三重校验）；Token 单次有效，提交后自动 `turnstile.reset()`。已用真实浏览器端到端验证：新 Token 注册成功、重放同一 Token 被 403 拒绝。
+- **排版**：全局 `text-autospace: normal` + `text-spacing-trim: space-all`，中西文混排间距完全由排版引擎处理，UI 文案中不人工插入混排空格。
+- **PWA**：`public/manifest.webmanifest` + `public/sw.js`（导航网络优先回退离线壳、静态资源 stale-while-revalidate、`/api/*` 仅网络）；图标由 `scripts/gen-icons.ts` 像素绘制生成（192/512/maskable）。Service Worker 仅在生产构建注册。
+- **移动端**：≤48em 时导航栏变为悬浮胶囊（毛玻璃+圆角+安全区偏移），网格列宽经 CSS 变量收紧（`--sc-time-w`/`--sc-cell-w`），触控设备加大槽位命中面积。
 
 ## 目录结构
 

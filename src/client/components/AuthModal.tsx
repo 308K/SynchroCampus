@@ -1,16 +1,6 @@
 // 登录 / 注册弹窗：Cloudflare Turnstile 人机验证 + JWT 会话签发
-import { useState, type Ref } from 'react'
-import {
-  Alert,
-  Button,
-  Divider,
-  Modal,
-  PasswordInput,
-  SegmentedControl,
-  Stack,
-  TextInput,
-  Text,
-} from '@mantine/core'
+import { useEffect, useState, type Ref } from 'react'
+import { Alert, Button, Modal, PasswordInput, SegmentedControl, Stack, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useAuth } from '../auth/AuthContext'
@@ -35,6 +25,15 @@ export function AuthModal({ opened, onClose, initialMode = 'login' }: AuthModalP
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [turnstileRef, setTurnstileRef] = useState<TurnstileHandle | null>(null)
+
+  // 每次打开时同步到调用方请求的模式（login / register），并清空上一次的状态
+  useEffect(() => {
+    if (!opened) return
+    setMode(initialMode)
+    setError(null)
+    setToken('')
+    setSubmitting(false)
+  }, [opened, initialMode])
 
   const switchMode = (next: AuthMode) => {
     setMode(next)
@@ -92,7 +91,7 @@ export function AuthModal({ opened, onClose, initialMode = 'login' }: AuthModalP
         />
         <TextInput
           label="用户名"
-          placeholder="3–20 个字符"
+          placeholder="3–20个字符"
           value={username}
           onChange={(e) => setUsername(e.currentTarget.value)}
           maxLength={20}
@@ -123,11 +122,6 @@ export function AuthModal({ opened, onClose, initialMode = 'login' }: AuthModalP
         >
           {mode === 'login' ? '登录并继续' : '创建账户'}
         </Button>
-        <Divider label="安全说明" labelPosition="center" />
-        <Text size="xs" c="dimmed" ta="center">
-          密码经 argon2id 单向哈希后存于本机 SQLite；登录注册均经 Cloudflare Turnstile
-          人机验证阻断恶意脚本，不采集任何教务数据。
-        </Text>
       </Stack>
     </Modal>
   )

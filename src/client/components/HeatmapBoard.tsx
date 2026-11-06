@@ -65,7 +65,7 @@ export function HeatmapBoard({ room, participants, myNickname }: HeatmapBoardPro
                       {label}
                     </Text>
                     <Text size="xs" c="dimmed">
-                      综合空闲率 {((R[maskIndex] ?? 0) * 100).toFixed(0)}%
+                      综合空闲率{((R[maskIndex] ?? 0) * 100).toFixed(0)}%
                     </Text>
                     <Divider my={2} />
                     {census.available.length > 0 && (
@@ -100,15 +100,15 @@ export function HeatmapBoard({ room, participants, myNickname }: HeatmapBoardPro
         />
       </Box>
 
-      <Group justify="space-between" gap="md">
+      <Group justify="space-between" gap="md" wrap="wrap">
         <Group gap="sm">
           <div style={{ width: 160, height: 12, borderRadius: 6, background: heatGradient(dark) }} />
           <Text size="xs" c="dimmed">
-            无人空闲 → 全员有空（OKLCH 色阶）
+            无人空闲→全员有空（OKLCH色阶）
           </Text>
         </Group>
         <Text size="xs" c="dimmed">
-          在场 {participants.length} 人 · 点击格子查看人员透视 · 每 8 秒自动同步
+          在场{participants.length}人，点击格子查看人员透视，每8秒自动同步
         </Text>
       </Group>
     </Stack>
