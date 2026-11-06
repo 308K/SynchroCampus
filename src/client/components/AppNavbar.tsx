@@ -1,9 +1,30 @@
-// 顶栏导航：品牌、主题切换、登录态
+// 顶栏导航：品牌、主题切换（系统→深→浅循环）、登录态
+import { useState } from 'react'
 import { Avatar, Button, Group, Menu, Text, ThemeIcon, ActionIcon, useMantineColorScheme, Tooltip } from '@mantine/core'
-import { IconLogout, IconMoonFilled, IconSunFilled } from '@tabler/icons-react'
+import { IconDeviceDesktop, IconLogout, IconMoonFilled, IconSunFilled } from '@tabler/icons-react'
 import { useAuth } from '../auth/AuthContext'
 import { APP_NAME } from '../config'
 import type { AuthMode } from './AuthModal'
+
+type ColorMode = 'auto' | 'dark' | 'light'
+
+/** 循环顺序：系统 → 深 → 浅 → 系统 */
+const NEXT_MODE: Record<ColorMode, ColorMode> = { auto: 'dark', dark: 'light', light: 'auto' }
+
+const MODE_META: Record<ColorMode, { label: string; icon: typeof IconSunFilled }> = {
+  auto: { label: '跟随系统', icon: IconDeviceDesktop },
+  dark: { label: '深色', icon: IconMoonFilled },
+  light: { label: '浅色', icon: IconSunFilled },
+}
+
+function readStoredMode(): ColorMode {
+  try {
+    const stored = localStorage.getItem('mantine-color-scheme-value')
+    return stored === 'dark' || stored === 'light' ? stored : 'auto'
+  } catch {
+    return 'auto'
+  }
+}
 
 interface AppNavbarProps {
   onOpenAuth: (mode: AuthMode) => void
@@ -11,7 +32,18 @@ interface AppNavbarProps {
 
 export function AppNavbar({ onOpenAuth }: AppNavbarProps) {
   const { user, logout } = useAuth()
-  const { colorScheme, setColorScheme } = useMantineColorScheme()
+  const { setColorScheme, clearColorScheme } = useMantineColorScheme()
+  const [mode, setMode] = useState<ColorMode>(readStoredMode)
+
+  const cycleMode = () => {
+    const next = NEXT_MODE[mode]
+    setMode(next)
+    if (next === 'auto') clearColorScheme()
+    else setColorScheme(next)
+  }
+
+  const meta = MODE_META[mode]
+  const nextLabel = MODE_META[NEXT_MODE[mode]].label
 
   return (
     <Group h="100%" px="md" justify="space-between" wrap="nowrap">
@@ -33,14 +65,9 @@ export function AppNavbar({ onOpenAuth }: AppNavbarProps) {
       </Group>
 
       <Group gap="sm" wrap="nowrap">
-        <Tooltip label={colorScheme === 'dark' ? '切换浅色' : '切换深色'}>
-          <ActionIcon
-            variant="default"
-            size="lg"
-            aria-label="切换主题"
-            onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
-          >
-            {colorScheme === 'dark' ? <IconSunFilled size={17} /> : <IconMoonFilled size={17} />}
+        <Tooltip label={`当前：${meta.label}（点击切换为${nextLabel}）`}>
+          <ActionIcon variant="default" size="lg" aria-label="切换主题" onClick={cycleMode}>
+            <meta.icon size={17} />
           </ActionIcon>
         </Tooltip>
         {user ? (

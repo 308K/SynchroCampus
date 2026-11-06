@@ -16,7 +16,17 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import confetti from 'canvas-confetti'
-import { IconArrowLeft, IconFlask, IconLock, IconRefresh } from '@tabler/icons-react'
+import {
+  IconArrowLeft,
+  IconCalendar,
+  IconClock,
+  IconConfetti,
+  IconFlask,
+  IconHourglass,
+  IconLock,
+  IconRefresh,
+  IconUsers,
+} from '@tabler/icons-react'
 import { api, unwrap, ApiError, tokenStore } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { AgentDecisionDeck } from '../components/AgentDecisionDeck'
@@ -283,18 +293,30 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
 
       <Card shadow="sm" padding="sm" radius="md" withBorder>
         <Group gap="lg" wrap="wrap">
-          <Text size="sm" c="dimmed">
-            📅 {dateSpan}
-          </Text>
-          <Text size="sm" c="dimmed">
-            🕐 每日{room.startHour}:00–{room.endHour}:00
-          </Text>
-          <Text size="sm" c="dimmed">
-            ⏱️ 时长{room.durationMinutes}分钟
-          </Text>
-          <Text size="sm" c="dimmed">
-            👥 {participants.length}人已提交
-          </Text>
+          <Group gap={6} wrap="nowrap">
+            <IconCalendar size={15} color="var(--mantine-color-dimmed)" />
+            <Text size="sm" c="dimmed">
+              {dateSpan}
+            </Text>
+          </Group>
+          <Group gap={6} wrap="nowrap">
+            <IconClock size={15} color="var(--mantine-color-dimmed)" />
+            <Text size="sm" c="dimmed">
+              每日{room.startHour}:00–{room.endHour}:00
+            </Text>
+          </Group>
+          <Group gap={6} wrap="nowrap">
+            <IconHourglass size={15} color="var(--mantine-color-dimmed)" />
+            <Text size="sm" c="dimmed">
+              时长{room.durationMinutes}分钟
+            </Text>
+          </Group>
+          <Group gap={6} wrap="nowrap">
+            <IconUsers size={15} color="var(--mantine-color-dimmed)" />
+            <Text size="sm" c="dimmed">
+              {participants.length}人已提交
+            </Text>
+          </Group>
           {isOwner && !isDemo && (
             <Text size="sm" c="brand" fw={600}>
               你是房主
@@ -385,7 +407,18 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
         </Tabs.Panel>
       </Tabs>
 
-      <Drawer opened={drawerOpen} onClose={() => setDrawerOpen(false)} title="🎉 定案完成" position="right" size="lg">
+      <Drawer
+        opened={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title={
+          <Group gap={6} wrap="nowrap">
+            <IconConfetti size={16} color="var(--mantine-color-brand-6)" />
+            <span>定案完成</span>
+          </Group>
+        }
+        position="right"
+        size="lg"
+      >
         {finalized ? (
           <Stack gap="md">
             <Text size="sm" c="dimmed">

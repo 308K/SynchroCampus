@@ -1,10 +1,13 @@
 // 智能体决策甲板：Top-3 最优排程窗口 + 解释性加扣分指标 + 房主采纳
 import { useMemo } from 'react'
 import { Alert, Badge, Button, Card, Group, RingProgress, SimpleGrid, Stack, Text } from '@mantine/core'
-import { IconCrown, IconSparkles } from '@tabler/icons-react'
+import { IconCrown, IconMedal, IconMedal2, IconSparkles, IconTrophy } from '@tabler/icons-react'
 import { computeTopWindows, scoreBreakdownText, windowTags } from '../lib/scheduler'
 import { windowRange, type ParticipantDTO, type RoomDTO, type ScoredWindow } from '../lib/room'
 import { fmtDateFull } from '../lib/temporal'
+
+/** Top-3 排名图标（Tabler，替代 emoji） */
+const RANK_ICONS = [IconTrophy, IconMedal2, IconMedal] as const
 
 interface AgentDecisionDeckProps {
   room: RoomDTO
@@ -15,7 +18,6 @@ interface AgentDecisionDeckProps {
   finalizing: ScoredWindow | null
 }
 
-const MEDALS = ['🥇', '🥈', '🥉']
 
 export function AgentDecisionDeck({
   room,
@@ -47,6 +49,7 @@ export function AgentDecisionDeck({
         {windows.map((w, i) => {
           const range = windowRange(room, w.dayIndex, w.startSlot, w.slotCount)
           const tags = windowTags(w, i)
+          const RankIcon = RANK_ICONS[i] ?? IconMedal
           const payload = {
             date: range.date.toString(),
             startTime: range.startTime,
@@ -65,9 +68,12 @@ export function AgentDecisionDeck({
             >
               <Stack gap="sm" h="100%">
                 <Group justify="space-between" wrap="nowrap">
-                  <Text fw={700} size="lg">
-                    {MEDALS[i] ?? i + 1} {fmtDateFull(range.date)}
-                  </Text>
+                  <Group gap={6} wrap="nowrap">
+                    <RankIcon size={18} color={i === 0 ? 'var(--mantine-color-brand-6)' : 'var(--mantine-color-dimmed)'} />
+                    <Text fw={700} size="lg">
+                      {fmtDateFull(range.date)}
+                    </Text>
+                  </Group>
                   {adopted && <Badge color="brand" variant="filled">已采纳</Badge>}
                 </Group>
                 <Text fw={700} fz="xl" style={{ fontVariantNumeric: 'tabular-nums' }}>

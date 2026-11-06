@@ -10,7 +10,7 @@ export function buildNoticeMarkdown(
   const date = fmtDateFull(Temporal.PlainDate.from(slot.date))
   const names = participantNames.length > 0 ? participantNames.join('、') : '全体群成员'
   return [
-    `## 🗓️「${room.title}」时间定案通知`,
+    `## 「${room.title}」时间定案通知`,
     '',
     `经全员空闲时段碰撞协商，本次安排最终定案如下：`,
     '',
