@@ -23,10 +23,10 @@ async function pump(name: string, stream: ReadableStream<Uint8Array>) {
 }
 
 function start(name: string, args: string[]) {
+  // 不显式传 env：让子进程继承环境并由 Bun 自行加载 .env（否则 env 快照会阻断 .env 热加载）
   const proc = Bun.spawn([process.execPath, ...args], {
     stdout: 'pipe',
     stderr: 'pipe',
-    env: process.env,
   })
   jobs.push({ name, proc })
   void pump(name, proc.stdout as ReadableStream<Uint8Array>)

@@ -15,6 +15,9 @@ const brand: MantineColorsTuple = [
 ]
 
 export const theme = createTheme({
+  colors: {
+    brand,
+  },
   primaryColor: 'brand',
   primaryShade: 6,
   defaultRadius: 'md',
