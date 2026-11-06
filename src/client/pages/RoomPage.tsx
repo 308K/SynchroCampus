@@ -48,7 +48,7 @@ interface RoomData {
   isOwner: boolean
 }
 
-const CONFETTI_COLORS = ['#8450ff', '#9c73ff', '#5a29bf', '#cdbdff']
+const CONFETTI_COLORS = ['#ddaacc', '#c07cad', '#9a5489', '#f3e4ee']
 
 function celebrate() {
   confetti({ particleCount: 130, spread: 100, origin: { y: 0.72 }, colors: CONFETTI_COLORS })

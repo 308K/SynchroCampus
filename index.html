@@ -8,18 +8,21 @@
       name="description"
       content="序时SynchroCampus——基于离散时空碰撞与启发式约束规划的群体日程自协同决策智能体"
     />
-    <meta name="theme-color" content="#8450ff" />
+    <meta name="theme-color" content="#ddaacc" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>序时SynchroCampus·群体日程自协同</title>
     <script>
-      // 主题预置：避免深色模式首帧闪烁（Mantine localStorage key）
+      // 主题预置：默认跟随系统偏好；用户手动切换后以 localStorage 为准（避免首帧闪烁）
+      // key 与 Mantine v7 localStorageColorSchemeManager 默认值保持一致
       ;(function () {
         try {
-          var scheme = localStorage.getItem('mantine-color-scheme')
-          document.documentElement.setAttribute('data-mantine-color-scheme', scheme === 'dark' ? 'dark' : 'light')
+          var stored = localStorage.getItem('mantine-color-scheme-value')
+          var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          var scheme = stored === 'dark' || stored === 'light' ? stored : systemDark ? 'dark' : 'light'
+          document.documentElement.setAttribute('data-mantine-color-scheme', scheme)
         } catch (e) {}
       })()
     </script>

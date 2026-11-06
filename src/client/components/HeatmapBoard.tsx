@@ -4,7 +4,7 @@ import { Badge, Box, Divider, Group, Popover, Stack, Text } from '@mantine/core'
 import { useMantineColorScheme } from '@mantine/core'
 import { SlotGrid } from './SlotGrid'
 import { availabilityRatios, slotCensus } from '../lib/mask'
-import { heatComponents, heatGradient } from '../lib/oklch'
+import { heatComponents, heatGradient, neutralHeat } from '../lib/oklch'
 import { datesOf, slotsPerDay, slotLabel, totalSlots, type ParticipantDTO, type RoomDTO } from '../lib/room'
 import { fmtDateLabel } from '../lib/temporal'
 
@@ -35,8 +35,8 @@ export function HeatmapBoard({ room, participants, myNickname }: HeatmapBoardPro
   const R = useMemo(() => availabilityRatios(participants, totalSlots(room)), [participants, room])
 
   const cellStyle = (r: number): CSSProperties => {
-    const { l, c } = heatComponents(r, dark)
-    return { '--cell-l': String(l), '--cell-c': String(c) } as CSSProperties
+    const comp = participants.length ? heatComponents(r, dark) : neutralHeat(dark)
+    return { '--cell-l': String(comp.l), '--cell-c': String(comp.c), '--cell-h': String(comp.h) } as CSSProperties
   }
 
   return (

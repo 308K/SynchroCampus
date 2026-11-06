@@ -111,8 +111,8 @@
 
 /* ===== OKLCH 热力图 ===== */
 .heatmap-cell {
-  /* L / C 由内联 CSS 变量注入，Hue 固定 280 */
-  background-color: oklch(var(--cell-l) var(--cell-c) 280);
+  /* L / C / H 由内联 CSS 变量注入：红(29°) → 绿(142°) */
+  background-color: oklch(var(--cell-l) var(--cell-c) var(--cell-h));
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
@@ -121,14 +121,14 @@
   outline-offset: -2px;
 }
 
-/* 主题色 CSS 变量（供三态单元格取色） */
+/* 主题色 CSS 变量（供三态单元格取色，#ddaacc 色系） */
 :root {
-  --sc-brand-5: oklch(0.68 0.19 280);
+  --sc-brand-5: oklch(0.74 0.09 330);
   --sc-amber-2: oklch(0.82 0.13 75);
 }
 
 [data-mantine-color-scheme='dark'] {
-  --sc-brand-5: oklch(0.62 0.17 280);
+  --sc-brand-5: oklch(0.6 0.09 330);
   --sc-amber-2: oklch(0.75 0.12 75);
 }
 
@@ -146,7 +146,7 @@
     background: light-dark(rgba(255, 255, 255, 0.86), rgba(26, 27, 30, 0.86));
     backdrop-filter: blur(14px) saturate(1.5);
     -webkit-backdrop-filter: blur(14px) saturate(1.5);
-    box-shadow: 0 6px 24px rgba(90, 41, 191, 0.16);
+    box-shadow: 0 6px 24px rgba(154, 84, 137, 0.16);
   }
 
   .mantine-AppShell-main {

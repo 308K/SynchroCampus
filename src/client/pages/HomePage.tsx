@@ -124,8 +124,6 @@ export function HomePage({ navigate }: HomePageProps) {
         <Group gap="sm" wrap="wrap">
           <Button
             size="md"
-            variant="gradient"
-            gradient={{ from: '#9c73ff', to: '#5a29bf', deg: 45 }}
             leftSection={<IconFlask size={17} />}
             loading={enteringDemo}
             onClick={() => void handleDemo()}

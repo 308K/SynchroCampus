@@ -16,7 +16,7 @@ export function AppNavbar({ onOpenAuth }: AppNavbarProps) {
   return (
     <Group h="100%" px="md" justify="space-between" wrap="nowrap">
       <Group gap="sm" wrap="nowrap">
-        <ThemeIcon size={34} radius="md" variant="gradient" gradient={{ from: '#9c73ff', to: '#5a29bf', deg: 45 }}>
+        <ThemeIcon size={34} radius="md" variant="filled">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
             <circle cx="12" cy="12" r="8.5" />
             <path d="M12 7.5V12l3.5 2" />

@@ -62,7 +62,8 @@ React 19 + Vite + Mantine v7     Bun 1.1+ 运行时
 
 - **前后端通信**：`@elysia/eden` treaty 2，`import type { App }` 从服务端路由定义零样板推导全部请求/响应类型。注意配置 `parseDate: false`：本项目 `startDate/endDate` 是纯日期字符串，必须保持 string 交给 Temporal 处理（Eden 默认会把日期样字符串转成 Date，丢失"仅日期"语义）。
 - **时间引擎**：全面采用 TC39 Temporal API（原生优先；旧浏览器按需加载 `temporal-polyfill` 异步分块，见构建产物 `temporal-polyfill-*.js`）。不依赖 dayjs/moment。
-- **色彩引擎**：热力图在 OKLCH 知觉均匀空间插值：`L = Lmin + R·(Lmax−Lmin)`、`C = Cmin + R·(Cmax−Cmin)`、`Hue = 280°`；`R(t) = (N₁ + 0.5·N₂)/N`。
+- **色彩引擎**：热力图在 OKLCH 知觉均匀空间对三通道插值：`L = Lmin + R·(Lmax−Lmin)`、`C = Cmin + R·(Cmax−Cmin)`、`Hue = 29° + R·(142°−29°)`（无人空闲红 → 全员有空绿，中途经黄，知觉平滑）；`R(t) = (N₁ + 0.5·N₂)/N`；无参与数据时显示低对比中性底色。品牌主色为 #ddaacc 粉紫色系（Mantine 色阶 shade 3，深 shade 用于填充按钮保证对比度）。
+- **主题**：深色模式默认跟随系统（`defaultColorScheme: auto` + 首帧预置脚本读取 `prefers-color-scheme`），用户手动切换后以 localStorage 为准。
 - **排程引擎**（端侧 <1ms）：`Score(W) = 100·R̄(W) − 25·P_meal − 40·P_late + 8·B_contig`，遍历全部候选窗口输出互不重叠的 Top-3。
 - **安全闭环**：注册/登录嵌入 Turnstile（action `signup`/`login`），服务端 canonical siteverify（success + action + hostname 白名单三重校验）；Token 单次有效，提交后自动 `turnstile.reset()`。已用真实浏览器端到端验证：新 Token 注册成功、重放同一 Token 被 403 拒绝。
 - **排版**：全局 `text-autospace: normal` + `text-spacing-trim: space-all`，中西文混排间距完全由排版引擎处理，UI 文案中不人工插入混排空格。

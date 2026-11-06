@@ -15,7 +15,7 @@ export function SharePopover({ roomId }: SharePopoverProps) {
 
   useEffect(() => {
     if (!opened || qr) return
-    void QRCode.toDataURL(link, { margin: 1, width: 240, color: { dark: '#5726b9', light: '#ffffff' } })
+    void QRCode.toDataURL(link, { margin: 1, width: 240, color: { dark: '#9a5489', light: '#ffffff' } })
       .then(setQr)
       .catch(() => setQr(null))
   }, [opened, link, qr])

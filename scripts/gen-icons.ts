@@ -3,8 +3,8 @@
 import { writeFileSync } from 'node:fs'
 import { PNG } from 'pngjs'
 
-const C1 = [0x9c, 0x73, 0xff] // #9c73ff
-const C2 = [0x5a, 0x29, 0xbf] // #5a29bf
+const C1 = [0xdd, 0xaa, 0xcc] // #ddaacc
+const C2 = [0x9a, 0x54, 0x89] // #9a5489
 const WHITE = [0xff, 0xff, 0xff]
 
 function lerp(a: number[], b: number[], t: number): number[] {
