@@ -134,18 +134,20 @@
 
 /* ===== 胶囊形悬浮导航栏（全宽度生效）+ 高斯模糊 ===== */
 .mantine-AppShell-header {
-  top: calc(20px + env(safe-area-inset-top, 0px));
-  left: 50%;
-  transform: translateX(-50%);
-  /* 宽屏下最宽占视口 70%（左右各至少留 15%）；窄屏退化为左右 10px 贴边 */
-  width: min(70vw, calc(100vw - 20px));
+  top: calc(28px + env(safe-area-inset-top, 0px));
+  left: 0;
+  right: 0;
+  /* 不用 transform 居中（transform 会破坏自身 backdrop-filter 的合成路径）；
+     宽屏单侧留白向 30% 上限靠拢，窄屏贴边 */
+  width: min(max(40vw, 680px), calc(100vw - 24px));
+  margin-inline: auto;
   /* 胶囊高 = AppShell 头部高度 − 上下悬浮间隙；左端半圆与圆形 Logo 同心 */
-  height: calc(var(--app-shell-header-height, 88px) - 24px);
+  height: calc(var(--app-shell-header-height, 96px) - 24px);
   border-radius: 999px;
   border: 1px solid light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.1));
-  background: light-dark(rgba(255, 255, 255, 0.72), rgba(26, 27, 30, 0.72));
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  background: light-dark(rgba(255, 255, 255, 0.68), rgba(26, 27, 30, 0.68));
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
   box-shadow: 0 6px 24px rgba(154, 84, 137, 0.16);
 }
 
