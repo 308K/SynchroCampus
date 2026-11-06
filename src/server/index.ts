@@ -10,7 +10,17 @@ const port = Number(process.env.PORT ?? 3001)
 // 演示模式种子数据（幂等）
 ensureDemoData()
 
-const root = new Elysia().use(cors()).use(app)
+// CORS：开发默认全放开；生产用 CORS_ORIGINS 白名单（逗号分隔），并显式放行 Authorization 预检
+const corsOrigins = process.env.CORS_ORIGINS?.trim()
+const root = new Elysia()
+  .use(
+    cors({
+      origin: corsOrigins ? corsOrigins.split(',').map((o) => o.trim()).filter(Boolean) : true,
+      allowedHeaders: ['authorization', 'content-type'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    }),
+  )
+  .use(app)
 
 // 可选：若存在前端构建产物 dist/，则单进程托管静态资源（生产形态预览）
 if (existsSync('dist/index.html')) {

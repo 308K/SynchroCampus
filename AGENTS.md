@@ -37,6 +37,7 @@ SynchroCampus（序时）：React 19 + Vite + Mantine v7 前端，Bun + Elysia 2
 ## 验证流程
 
 - 顺序：`typecheck` → `build` → 起服务 → `smoke.ts` → 浏览器实测。
+- 生产部署（Pages `synchro.kkn.moe` + Tunnel `api.synchro.kkn.moe`）由独立 agent 按 `docs/DEPLOY.md` 执行；勿改动 `TURNSTILE_HOSTNAMES` / `CORS_ORIGINS` / `VITE_API_BASE` 的语义与拼写。
 - 内置浏览器对该 Mantine 应用的无障碍树很稀疏：`browser.wait condition:"text"` 与 `find` 不可靠；用 `browser.evaluate` 轮询，等待逻辑写进**页面侧 async IIFE**（Code Mode 运行时无 setTimeout）。
 - Turnstile 端到端：页面内覆写 `window.fetch` 捕获请求体里的 token；重放同一 token 应得 403（单次有效证明）。
 

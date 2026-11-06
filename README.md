@@ -101,11 +101,14 @@ scripts/dev.ts              # 并发进程管理（API + Web）
 8. 房主采纳 → canvas-confetti 全屏庆祝 → 房间锁定
 9. 下载 RFC 5545 `.ics`（TZID:Asia/Shanghai + VALARM 提前 15 分钟）或复制 Markdown 群通告
 
-## 部署（后续）
+## 部署
 
-- **前端**：`bun run build` → `dist/` 部署至 Cloudflare Pages；构建时设置 `VITE_API_BASE=https://<后端域名>`。
-- **后端**：闲置云服务器 Systemd 常驻 `bun src/server/index.ts`，Nginx 反代 + Let's Encrypt；`.env` 设置 `TURNSTILE_HOSTNAGES=<Pages 域名>`（切勿包含 localhost）、固定 `JWT_SECRET`。
-- 生产用 `TURNSTILE_HOSTNAMES` 指向真实前端域名，站点密钥不变，仅换白名单。
+完整交接说明见 **[`docs/DEPLOY.md`](docs/DEPLOY.md)**（后端由独立 agent 按该文档执行）。规划摘要：
+
+- **域名**：`synchro.kkn.moe` → Cloudflare Pages（构建命令 `bun install && bun run build`，输出 `dist`，构建期设 `VITE_API_BASE=https://api.synchro.kkn.moe`）；`api.synchro.kkn.moe` → Cloudflare Tunnel 穿透到云服务器 `127.0.0.1:3001`。同一 zone 两个主机名，TLS 均由 Cloudflare 签发。
+- **后端**：云服务器 Bun + systemd 常驻 `bun src/server/index.ts`（无需 Nginx/证书）；`.env` 生产值：`TURNSTILE_SECRET`、`TURNSTILE_HOSTNAMES=synchro.kkn.moe`（切勿含 localhost）、固定 `JWT_SECRET`、`CORS_ORIGINS=https://synchro.kkn.moe`。
+- **Turnstile Dashboard**：组件主机名需添加 `synchro.kkn.moe`。
+- 方案 B（单主机名同域、弃用 Pages）与上线验证清单、备份回滚、故障速查均在 `docs/DEPLOY.md`。
 
 ## 备注
 
