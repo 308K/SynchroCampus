@@ -2,8 +2,7 @@
 // - 显式渲染（explicit render），每个受保护表面持有独立 widgetId
 // - Token 单次有效：提交后由外部调用 reset() 换取新 Token
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
-import { Box, Text } from '@mantine/core'
-import { useMantineColorScheme } from '@mantine/core'
+import { Box, Text, useComputedColorScheme } from '@mantine/core'
 import { TURNSTILE_SITEKEY } from '../config'
 
 export interface TurnstileHandle {
@@ -43,8 +42,9 @@ export function TurnstileWidget({ action, onToken, ref }: TurnstileWidgetProps) 
   onTokenRef.current = onToken
   const [widgetId, setWidgetId] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const { colorScheme } = useMantineColorScheme()
-  const theme = colorScheme === 'dark' ? 'dark' : 'light'
+  // useComputedColorScheme 会把 auto 解析为实际生效值，并订阅 prefers-color-scheme 变化
+  const computed = useComputedColorScheme()
+  const theme = computed === 'dark' ? 'dark' : 'light'
 
   useEffect(() => {
     let cancelled = false

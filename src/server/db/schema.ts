@@ -6,6 +6,8 @@ export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   username: text('username').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  // 注册时的客户端 IP（合规审计用；经 CF 时为 CF-Connecting-IP/X-Forwarded-For 首段）
+  registerIp: text('register_ip'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 })
 

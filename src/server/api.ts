@@ -9,7 +9,7 @@ import { Temporal } from 'temporal-polyfill'
 import { db } from './db'
 import { participants, rooms, users, type RoomRow } from './db/schema'
 import { clientIp, currentUser, type AuthUser } from './auth'
-import { getJwtSecret, signJwt } from './jwt'
+import { signJwt } from './jwt'
 import { verifyTurnstileToken } from './turnstile'
 import { DEMO_ROOM_ID, DEMO_USER_ID, DEMO_USERNAME, ensureDemoData, resetDemoData } from './demo'
 
@@ -61,7 +61,7 @@ function publicRoom(row: RoomRow) {
 }
 
 function issueToken(user: AuthUser): Promise<string> {
-  return signJwt({ sub: user.id, username: user.username }, getJwtSecret())
+  return signJwt({ sub: user.id, username: user.username })
 }
 
 export const app = new Elysia({ prefix: '/api' })
@@ -90,7 +90,15 @@ export const app = new Elysia({ prefix: '/api' })
       if (existing) return err(409, '用户名已被注册，请换一个试试。')
       const passwordHash = await Bun.password.hash(body.password, { algorithm: 'argon2id' })
       const id = nanoid(12)
-      db.insert(users).values({ id, username: body.username, passwordHash, createdAt: new Date() }).run()
+      db.insert(users)
+        .values({
+          id,
+          username: body.username,
+          passwordHash,
+          registerIp: clientIp(headers as Headers) ?? null,
+          createdAt: new Date(),
+        })
+        .run()
       const token = await issueToken({ id, username: body.username })
       return { token, user: { id, username: body.username } }
     },

@@ -1,87 +1,121 @@
-// 轻量 JWT（HMAC-SHA256，Web Crypto 实现，无第三方依赖）
+// 安全优化的轻量级 JWT（Web Crypto 原生实现）
 const encoder = new TextEncoder()
+const decoder = new TextDecoder()
 
-function b64urlEncode(bytes: Uint8Array): string {
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+const MAX_TOKEN_LENGTH = 4096
+const MIN_SECRET_LENGTH = 32
+
+// 1. 利用 Bun 内置 Buffer 实现极致性能的 base64url 编解码
+//    返回 Uint8Array<ArrayBuffer>（独立副本），满足 TS 严格模式下 BufferSource 的泛型约束
+const b64urlEncode = (bytes: Uint8Array): string => Buffer.from(bytes).toString('base64url')
+const b64urlDecode = (input: string): Uint8Array<ArrayBuffer> => Uint8Array.from(Buffer.from(input, 'base64url'))
+
+export interface JwtPayload {
+  sub: string
+  iat: number
+  exp: number
+  jti?: string
+  [key: string]: any
 }
 
-function b64urlDecode(input: string): Uint8Array {
-  const padded = input.replace(/-/g, '+').replace(/_/g, '/')
-  const binary = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4))
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return bytes
-}
+// 2. 缓存 CryptoKey 单例，避免每次验证重复 importKey
+let cachedCryptoKey: CryptoKey | null = null
 
-async function hmacSha256(secret: string, data: string): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey(
+export async function getJwtCryptoKey(): Promise<CryptoKey> {
+  if (cachedCryptoKey) return cachedCryptoKey
+
+  let secret = process.env.JWT_SECRET?.trim()
+
+  if (secret) {
+    if (encoder.encode(secret).length < MIN_SECRET_LENGTH) {
+      throw new Error(`[auth] JWT_SECRET 长度过短，至少需 ${MIN_SECRET_LENGTH} 字节`)
+    }
+  } else {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[auth] 生产环境必须配置 JWT_SECRET 环境变量！')
+    }
+    const bytes = new Uint8Array(32)
+    crypto.getRandomValues(bytes)
+    secret = b64urlEncode(bytes)
+    console.warn('[auth] 开发模式：已生成临时随机密钥，重启后登录态失效。')
+  }
+
+  // 同时赋予 'sign' 和 'verify' 用途
+  cachedCryptoKey = await crypto.subtle.importKey(
     'raw',
     encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['sign'],
+    ['sign', 'verify']
   )
-  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(data))
-  return new Uint8Array(sig)
+
+  return cachedCryptoKey
 }
 
-/** 常数时间比较，抵御时序侧信道 */
-function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]
-  return diff === 0
-}
-
-export interface JwtPayload {
-  sub: string
-  username: string
-  iat: number
-  exp: number
-}
-
-let bootSecret: string | null = null
-
-/** JWT 密钥：优先读取环境变量；缺失时生成进程级随机密钥（重启后会话失效，仅供开发） */
-export function getJwtSecret(): string {
-  const fromEnv = process.env.JWT_SECRET?.trim()
-  if (fromEnv) return fromEnv
-  if (!bootSecret) {
-    bootSecret = crypto.randomUUID() + crypto.randomUUID()
-    console.warn(
-      '[auth] JWT_SECRET 未配置，已生成临时密钥（重启后登录态失效）。生产环境请在 .env 中固定该值。',
-    )
-  }
-  return bootSecret
-}
-
-export async function signJwt(
-  payload: { sub: string; username: string },
-  secret: string,
-  expiresInSeconds = 7 * 24 * 3600,
+/**
+ * 签发 Token
+ */
+export async function signJwt<T extends Record<string, any>>(
+  payload: T & { sub: string },
+  expiresInSeconds = 2 * 3600
 ): Promise<string> {
+  const key = await getJwtCryptoKey()
   const now = Math.floor(Date.now() / 1000)
+
   const header = { alg: 'HS256', typ: 'JWT' }
-  const body: JwtPayload = { ...payload, iat: now, exp: now + expiresInSeconds }
+  const body: JwtPayload = {
+    ...payload,
+    iat: now,
+    exp: now + expiresInSeconds,
+    jti: crypto.randomUUID(),
+  }
+
   const head = b64urlEncode(encoder.encode(JSON.stringify(header)))
   const claims = b64urlEncode(encoder.encode(JSON.stringify(body)))
-  const sig = await hmacSha256(secret, `${head}.${claims}`)
-  return `${head}.${claims}.${b64urlEncode(sig)}`
+  const dataToSign = encoder.encode(`${head}.${claims}`)
+
+  const sig = await crypto.subtle.sign('HMAC', key, dataToSign)
+  return `${head}.${claims}.${b64urlEncode(new Uint8Array(sig))}`
 }
 
-export async function verifyJwt(token: string, secret: string): Promise<JwtPayload | null> {
+/**
+ * 验证 Token
+ */
+export async function verifyJwt<T extends JwtPayload = JwtPayload>(
+  token: string
+): Promise<T | null> {
+  // 1. 基础防御
+  if (!token || typeof token !== 'string' || token.length > MAX_TOKEN_LENGTH) {
+    return null
+  }
+
   const parts = token.split('.')
   if (parts.length !== 3) return null
   const [head, claims, sig] = parts
-  const expected = await hmacSha256(secret, `${head}.${claims}`)
-  const actual = b64urlDecode(sig)
-  if (!timingSafeEqual(expected, actual)) return null
+
   try {
-    const payload = JSON.parse(new TextDecoder().decode(b64urlDecode(claims))) as JwtPayload
-    if (typeof payload.exp !== 'number' || payload.exp * 1000 < Date.now()) return null
-    if (typeof payload.sub !== 'string' || typeof payload.username !== 'string') return null
+    const key = await getJwtCryptoKey()
+    const signatureBytes = b64urlDecode(sig)
+    const dataToVerify = encoder.encode(`${head}.${claims}`)
+
+    // 2. 原生恒时间签名比对
+    const isValid = await crypto.subtle.verify('HMAC', key, signatureBytes, dataToVerify)
+    if (!isValid) return null
+
+    // 3. 校验 Header（容忍大小写 typ）
+    const header = JSON.parse(decoder.decode(b64urlDecode(head)))
+    if (header.alg !== 'HS256' || (header.typ && header.typ.toUpperCase() !== 'JWT')) {
+      return null
+    }
+
+    // 4. 校验 Claims
+    const payload = JSON.parse(decoder.decode(b64urlDecode(claims))) as T
+    const now = Math.floor(Date.now() / 1000)
+
+    if (typeof payload.exp !== 'number' || payload.exp < now) return null
+    if (typeof payload.iat === 'number' && payload.iat > now + 60) return null // 允许 60 秒时钟漂移
+    if (typeof payload.sub !== 'string') return null
+
     return payload
   } catch {
     return null

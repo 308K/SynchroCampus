@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
+  register_ip TEXT,
   created_at INTEGER NOT NULL
 );
 
@@ -47,6 +48,11 @@ export function initDb() {
   sqlite.exec('PRAGMA journal_mode = WAL')
   sqlite.exec('PRAGMA foreign_keys = ON')
   sqlite.exec(DDL)
+  // 存量库迁移：users.register_ip（SQLite 的 ALTER TABLE 无 IF NOT EXISTS，先探测列）
+  const userCols = sqlite.query('PRAGMA table_info(users)').all() as Array<{ name: string }>
+  if (!userCols.some((c) => c.name === 'register_ip')) {
+    sqlite.exec('ALTER TABLE users ADD COLUMN register_ip TEXT')
+  }
   return drizzle(sqlite, { schema })
 }
 

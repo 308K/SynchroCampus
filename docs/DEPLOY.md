@@ -45,6 +45,7 @@ TURNSTILE_SECRET=****
 # siteverify 的前端主机名白名单：只填前端域名，切勿包含 localhost/127.0.0.1
 TURNSTILE_HOSTNAMES=synchro.kkn.moe
 # JWT 签名密钥：固定值，openssl rand -hex 32；更换会使所有会话失效
+# 注意：加固版 jwt.ts 强制密钥 ≥32 字节，生产环境缺失将启动即抛错
 JWT_SECRET=****
 # 方案 A（Pages + api 子域）必须填前端源；方案 B 留空
 CORS_ORIGINS=https://synchro.kkn.moe,https://www.synchro.kkn.moe

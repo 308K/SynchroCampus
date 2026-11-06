@@ -3,7 +3,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '../src/server/db'
 import { users, rooms } from '../src/server/db/schema'
-import { signJwt, getJwtSecret } from '../src/server/jwt'
+import { signJwt } from '../src/server/jwt'
 
 const BASE = 'http://localhost:3001/api'
 let failures = 0
@@ -22,7 +22,7 @@ async function main() {
   // 0) 直注测试用户 + 签发 JWT
   const passwordHash = await Bun.password.hash('test123456', { algorithm: 'argon2id' })
   db.insert(users).values({ id: uid, username, passwordHash, createdAt: new Date() }).run()
-  const token = await signJwt({ sub: uid, username }, getJwtSecret())
+  const token = await signJwt({ sub: uid, username })
   const authHeaders = { 'content-type': 'application/json', authorization: `Bearer ${token}` }
 
   try {

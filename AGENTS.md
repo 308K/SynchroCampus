@@ -24,7 +24,8 @@ SynchroCampus（序时）：React 19 + Vite + Mantine v7 前端，Bun + Elysia 2
 - 错误一律 `return status(code, { error: message })`（`status` 从 `elysia` 导入）。用 `set.status` + return 会让 Eden 的 `data` 退化成联合/unknown。
 - Eden 客户端（`src/client/api/client.ts`）必须保持 `parseDate: false`：否则 `startDate:'YYYY-MM-DD'` 被转成 `Date`，`Temporal.PlainDate.from` 抛错。
 - Eden 路径参数是**函数调用式**：`api.rooms({ id }).get()`；响应统一过 `unwrap()`（Eden 2 的 `error.status` 类型为 unknown）。
-- 无迁移系统：启动时幂等 DDL 建库（`src/server/db/index.ts`），SQLite WAL 于 `data/synchro.db`（gitignored）。启动即种子演示数据（`src/server/demo.ts`：房间 `demo`、房主 `demo-owner`，跨天自动滚动重置）。
+- 无迁移系统：启动时幂等 DDL 建库（`src/server/db/index.ts`），SQLite WAL 于 `data/synchro.db`（gitignored）。启动即种子演示数据（`src/server/demo.ts`：房间 `demo`、房主 `demo-owner`，跨天自动滚动重置）。列级迁移用 `PRAGMA table_info` 探测后 `ALTER TABLE`（见 `register_ip` 列的先例）。
+- `src/server/jwt.ts` 为用户加固版：`signJwt(payload, expiresInSeconds?)` / `verifyJwt(token)` **不接收 secret 参数**（内部 CryptoKey 缓存）；`JWT_SECRET` 必须 ≥32 字节，生产缺失直接抛错；users 表含 `register_ip`（注册时经 `clientIp()` 记录）。调用方勿再传 secret。
 
 ## 前端约定
 
