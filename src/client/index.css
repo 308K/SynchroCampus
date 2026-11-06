@@ -148,6 +148,12 @@
   box-shadow: 0 6px 24px rgba(154, 84, 137, 0.16);
 }
 
+/* 胶囊导航栏内的控件统一胶囊形，与容器呼应（登录/注册/主题切换/账号菜单/窄屏图标按钮） */
+.sc-capsule-nav .mantine-Button-root,
+.sc-capsule-nav .mantine-ActionIcon-root {
+  border-radius: 999px;
+}
+
 /* ===== 灰度对比度提升（默认 dimmed/placeholder 偏浅） =====
    选择器特异性需不低于 Mantine 注入的 :root[data-mantine-color-scheme='...']，且本文件在 Mantine 样式之后导入 */
 :root,
