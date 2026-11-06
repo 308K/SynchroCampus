@@ -41,9 +41,14 @@ function start(name: string, args: string[]) {
 function shutdown(code: number): void {
   if (shuttingDown) return
   shuttingDown = true
-  for (const { proc } of jobs) {
+  for (const { name, proc } of jobs) {
     try {
-      proc.kill()
+      // Windows 下 vite 以 node 孙进程运行，必须按进程树终止（否则留下占用端口的孤儿）
+      if (process.platform === 'win32') {
+        Bun.spawnSync(['taskkill', '/PID', String(proc.pid), '/T', '/F'], { stdout: 'ignore', stderr: 'ignore' })
+      } else {
+        proc.kill()
+      }
     } catch {}
   }
   process.exit(code)
