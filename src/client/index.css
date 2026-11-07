@@ -16,12 +16,14 @@
   }
 }
 
-/* 页面底色：浅色暖白（勿纯白）。html body 双选择器压过 Mantine 的 unlayered body 规则（@layer 内会输） */
+/* 页面底色：浅色暖白（勿纯白）。html body 双选择器压过 Mantine 的 unlayered body 规则（@layer 内会输）
+   注意：data-mantine-color-scheme 属性就挂在 <html> 上，深色选择器必须写成
+   html[...]='dark'] body——写成 [..='dark'] html body 永远不匹配（html 不会有祖先） */
 html body {
   background: #f3f0ee;
 }
 
-[data-mantine-color-scheme='dark'] html body {
+html[data-mantine-color-scheme='dark'] body {
   background: var(--mantine-color-dark-7);
 }
 
