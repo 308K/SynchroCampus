@@ -27,6 +27,8 @@ import {
   IconPalette,
   IconSparkles,
 } from '@tabler/icons-react'
+import { useMantineColorScheme } from '@mantine/core'
+import { HERO_TITLE_DARK, HERO_TITLE_LIGHT } from '../theme'
 import { api, unwrap, ApiError, tokenStore } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { useAuthUI } from '../auth/AuthUIContext'
@@ -58,6 +60,7 @@ function extractRoomCode(input: string): string | null {
 export function HomePage({ navigate }: HomePageProps) {
   const { user, ready, adoptSession } = useAuth()
   const { openAuth } = useAuthUI()
+  const { colorScheme } = useMantineColorScheme()
   const [rooms, setRooms] = useState<MyRoom[]>([])
   const [joinCode, setJoinCode] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -118,14 +121,14 @@ export function HomePage({ navigate }: HomePageProps) {
   return (
     <Stack gap="xl" maw={1080} mx="auto" w="100%">
       <Stack gap="sm" mt={{ base: 'xs', sm: 'md' }}>
-        {/* 大标题：两行，首行品牌色 #ddaacc + 极淡阴影（浅色用深玫瑰色，深色用品牌色光晕） */}
+        {/* 大标题：两行，首行主题感知取色（浅色=色阶中对比度≥3:1 的层，深色=#ddaacc 本色）+ 双主题阴影 */}
         <Stack gap={0} component="header">
           <Text
             ff="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
             fw={800}
             fz={{ base: '2.6rem', sm: '3.6rem' }}
             lh={1.12}
-            c="#ddaacc"
+            c={colorScheme === 'dark' ? HERO_TITLE_DARK : HERO_TITLE_LIGHT}
             className="sc-hero-title"
           >
             序时

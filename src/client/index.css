@@ -189,13 +189,13 @@ html[data-mantine-color-scheme='dark'] body {
    header 元素选择器升特异性，压过 Mantine 哈希类规则（.m_3b16f56b 的 top/height/背景），
    与产物中 Mantine 样式的先后顺序无关 */
 header.mantine-AppShell-header {
-  top: calc(20px + env(safe-area-inset-top, 0px));
+  top: calc(28px + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
-  width: min(70vw, calc(100vw - 20px));
+  width: min(max(40vw, 680px), calc(100vw - 24px));
   margin-inline: auto;
   /* 胶囊高 = AppShell 头部高度 − 上下悬浮间隙；左端半圆与圆形 Logo 同心 */
-  height: calc(var(--app-shell-header-height, 88px) - 24px);
+  height: calc(var(--app-shell-header-height, 96px) - 24px);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(7px);
