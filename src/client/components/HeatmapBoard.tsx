@@ -1,7 +1,6 @@
 // OKLCH 动态知觉热力图 + 人员浮层透视
 import { useMemo, useState, type CSSProperties } from 'react'
-import { Badge, Box, Divider, Group, Popover, Stack, Text } from '@mantine/core'
-import { useMantineColorScheme } from '@mantine/core'
+import { Badge, Box, Divider, Group, Popover, Stack, Text, useComputedColorScheme } from '@mantine/core'
 import { SlotGrid } from './SlotGrid'
 import { availabilityRatios, slotCensus } from '../lib/mask'
 import { heatComponents, heatGradient, neutralHeat } from '../lib/oklch'
@@ -27,8 +26,8 @@ function NameBadges({ names, color, highlight }: { names: string[]; color: strin
 }
 
 export function HeatmapBoard({ room, participants, myNickname }: HeatmapBoardProps) {
-  const { colorScheme } = useMantineColorScheme()
-  const dark = colorScheme === 'dark'
+  // useComputedColorScheme 解析 auto 为实际生效值（跟随系统时 colorScheme 字面量不可判断）
+  const dark = useComputedColorScheme() === 'dark'
   const [active, setActive] = useState<number | null>(null)
   const spd = slotsPerDay(room)
   const days = datesOf(room)

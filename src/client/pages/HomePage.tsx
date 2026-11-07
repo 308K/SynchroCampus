@@ -27,7 +27,7 @@ import {
   IconPalette,
   IconSparkles,
 } from '@tabler/icons-react'
-import { useMantineColorScheme } from '@mantine/core'
+import { useMantineColorScheme, useComputedColorScheme } from '@mantine/core'
 import { HERO_TITLE_DARK, HERO_TITLE_LIGHT } from '../theme'
 import { api, unwrap, ApiError, tokenStore } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
@@ -60,7 +60,8 @@ function extractRoomCode(input: string): string | null {
 export function HomePage({ navigate }: HomePageProps) {
   const { user, ready, adoptSession } = useAuth()
   const { openAuth } = useAuthUI()
-  const { colorScheme } = useMantineColorScheme()
+  // useComputedColorScheme 把 auto 解析为实际生效值（useMantineColorScheme().colorScheme 在跟随系统时返回字面量 'auto'，不可用于条件判断）
+  const colorScheme = useComputedColorScheme()
   const [rooms, setRooms] = useState<MyRoom[]>([])
   const [joinCode, setJoinCode] = useState('')
   const [loaded, setLoaded] = useState(false)
