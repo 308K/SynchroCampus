@@ -15,6 +15,7 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 ## 工具链坑（血泪换来的，勿回退）
 
 - **CSS 严禁使用 `light-dark()`**：Vite 8/lightningcss 时代曾把 `light-dark(A,B)` 编译成 `var(--lightningcss-*)` 双值声明且不生成定义 → 整条 background/border 非法被丢（毛玻璃事件根因）。现在虽换 Bun.build，此规则仍保留：深浅色一律用 `[data-mantine-color-scheme='dark']` 属性选择器（还能正确响应手动主题切换，light-dark 只认系统偏好）。
+- **data-mantine-color-scheme 属性挂在 `<html>` 上**：涉及 html/body 的深色规则必须写 `html[data-mantine-color-scheme='dark'] body`；写成 `[data-mantine-color-scheme='dark'] html body` 永不匹配（html 没有祖先）→ 曾导致深色模式下页面保持浅色底、组件深色的混合异常。后代元素规则（如 `.sc-grid-wrap`）用前缀形式没问题。
 - **Bun dev 的模块内联怪癖**：`bun --hot` 启动时打包 HTML，跨模块常量可能被内联为空串（曾见 `API_BASE → ""`）。调用点已加 `|| window.location.origin` 兜底；新增跨模块常量导入时同样在消费点兜底。
 - **Bun dev HTML 管道会解析 index.html 里的所有 `<link>` 引用**——引用 public/ 资源必须写**相对路径** `public/xxx`（绝对 `/xxx` 会 Build Failed）；`scripts/build.ts` 生成产物时会重写回根路径（public/ 平铺进 dist）。
 - **HTML 导入必须静态语法**：`import appHtml from '../../index.html'`（路径务必数对层级）；`await import('../index.html')` 动态导入会报 Cannot find module。
