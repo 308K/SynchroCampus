@@ -353,4 +353,54 @@ export const app = new Elysia({ prefix: '/api' })
     },
   )
 
+  // 6. 房主删除房间（级联清理参与者）
+  .delete(
+    '/rooms/:id',
+    { params: t.Object({ id: t.String() }) },
+    ({ params: { id }, user }) => {
+      if (!user) return err(401, '请先登录。')
+      const room = db.select().from(rooms).where(eq(rooms.id, id)).get()
+      if (!room) return err(404, '房间不存在。')
+      if (user.id !== room.ownerId) return err(403, '仅房主可以删除房间。')
+      if (id === DEMO_ROOM_ID) return err(403, '演示房间不可删除，如需还原请使用「重置演示」。')
+      db.delete(participants).where(eq(participants.roomId, id)).run()
+      db.delete(rooms).where(eq(rooms.id, id)).run()
+      return { ok: true }
+    },
+  )
+
+  // 7. 成员退出房间：登录成员按 userId 匹配；匿名成员按昵称匹配（userId 为空）
+  .post(
+    '/rooms/:id/leave',
+    {
+      params: t.Object({ id: t.String() }),
+      body: t.Optional(t.Object({ nickname: t.Optional(t.String({ minLength: 1, maxLength: 20 })) })),
+    },
+    ({ params: { id }, body, user }) => {
+      const room = db.select().from(rooms).where(eq(rooms.id, id)).get()
+      if (!room) return err(404, '房间不存在。')
+      if (user && user.id === room.ownerId) return err(403, '房主不能退出自己的房间，请使用删除房间。')
+      if (user) {
+        const mine = db
+          .select()
+          .from(participants)
+          .where(and(eq(participants.roomId, id), eq(participants.userId, user.id)))
+          .get()
+        if (!mine) return err(404, '你尚未加入该房间。')
+        db.delete(participants).where(eq(participants.id, mine.id)).run()
+        return { ok: true }
+      }
+      const nickname = body?.nickname?.trim()
+      if (!nickname) return err(400, '匿名成员退出需要提供昵称，或登录后操作。')
+      const anon = db
+        .select()
+        .from(participants)
+        .where(and(eq(participants.roomId, id), isNull(participants.userId), eq(participants.nickname, nickname)))
+        .get()
+      if (!anon) return err(404, '未找到该昵称的参与记录。')
+      db.delete(participants).where(eq(participants.id, anon.id)).run()
+      return { ok: true }
+    },
+  )
+
 export type App = typeof app

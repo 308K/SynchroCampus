@@ -1,7 +1,9 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { MantineProvider } from '@mantine/core'
+import { DatesProvider } from '@mantine/dates'
 import { Notifications } from '@mantine/notifications'
+import 'dayjs/locale/zh-cn'
 import { App } from './App'
 import { theme } from './theme'
 
@@ -13,8 +15,11 @@ import './index.css'
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="auto">
-      <Notifications position="top-center" limit={4} />
-      <App />
+      {/* 日期组件本地化：中文月/周名 + 周一为一周起点（dayjs 语言包需显式导入） */}
+      <DatesProvider settings={{ locale: 'zh-cn', firstDayOfWeek: 1, labelSeparator: '至' }}>
+        <Notifications position="top-center" limit={4} />
+        <App />
+      </DatesProvider>
     </MantineProvider>
   </React.StrictMode>,
 )

@@ -90,6 +90,7 @@ export function RoomConfigForm({ onCreated }: RoomConfigFormProps) {
               value={dates}
               onChange={setDates}
               minDate={new Date(`${todayISO()}T00:00:00`)}
+              firstDayOfWeek={1}
               clearable
               allowSingleDateInRange
             />

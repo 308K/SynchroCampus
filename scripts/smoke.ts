@@ -169,6 +169,32 @@ async function main() {
     // 16) 匿名用户不能重置演示数据
     const anonReset = await fetch(`${BASE}/demo/reset`, { method: 'POST' })
     check('匿名用户重置演示被拒（403）', anonReset.status === 403)
+
+    // 17) 非房主删除房间被拒
+    const anonDelete = await fetch(`${BASE}/rooms/${roomId}`, { method: 'DELETE' })
+    check('匿名用户删除房间被拒（401）', anonDelete.status === 401)
+
+    // 18) 匿名成员按昵称退出
+    const leave = await fetch(`${BASE}/rooms/${roomId}/leave`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ nickname: '冒烟·小A' }),
+    })
+    const afterLeave = (await fetch(`${BASE}/rooms/${roomId}`).then((r) => r.json())) as { participants: Array<{ nickname: string }> }
+    check('匿名成员退出房间', leave.status === 200 && afterLeave.participants.length === 1)
+
+    // 19) 再退出一次：记录已不在 → 404
+    const leaveAgain = await fetch(`${BASE}/rooms/${roomId}/leave`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ nickname: '冒烟·小A' }),
+    })
+    check('重复退出被拒（404）', leaveAgain.status === 404)
+
+    // 20) 房主删除房间：级联清理且房间消失
+    const del = await fetch(`${BASE}/rooms/${roomId}`, { method: 'DELETE', headers: authHeaders })
+    const afterDel = await fetch(`${BASE}/rooms/${roomId}`)
+    check('房主删除房间并级联清理（房间404）', del.status === 200 && afterDel.status === 404)
   } finally {
     // 清理：删除测试用户（级联清理其房间与参与者）
     db.delete(rooms).where(eq(rooms.ownerId, uid)).run()

@@ -8,6 +8,7 @@ import {
   Divider,
   Drawer,
   Group,
+  Modal,
   Stack,
   Tabs,
   Text,
@@ -21,10 +22,12 @@ import {
   IconCalendar,
   IconClock,
   IconConfetti,
+  IconDoorExit,
   IconFlask,
   IconHourglass,
   IconLock,
   IconRefresh,
+  IconTrash,
   IconUsers,
 } from '@tabler/icons-react'
 import { api, unwrap, ApiError, tokenStore } from '../api/client'
@@ -76,6 +79,8 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
   const [injecting, setInjecting] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [finalizing, setFinalizing] = useState<ScoredWindow | null>(null)
+  const [confirmAction, setConfirmAction] = useState<'delete' | 'leave' | null>(null)
+  const [acting, setActing] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const maskInitRef = useRef(false)
 
@@ -188,6 +193,46 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
     }
   }
 
+  const isParticipant =
+    data?.participants.some((p) => p.isSelf) ||
+    (Boolean(nickname.trim()) && Boolean(data?.participants.some((p) => !p.isSelf && p.nickname === nickname.trim())))
+
+  const handleDeleteRoom = async () => {
+    if (!data) return
+    setActing(true)
+    try {
+      await unwrap(await api.rooms({ id: data.room.id }).delete())
+      notifications.show({ color: 'brand', message: `房间「${data.room.title}」已删除` })
+      setConfirmAction(null)
+      navigate('/')
+    } catch (err) {
+      notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : '删除失败' })
+    } finally {
+      setActing(false)
+    }
+  }
+
+  const handleLeaveRoom = async () => {
+    if (!data) return
+    setActing(true)
+    try {
+      await unwrap(
+        await api.rooms({ id: data.room.id }).leave.post(
+          user ? {} : { nickname: nickname.trim().slice(0, 20) || undefined },
+        ),
+      )
+      notifications.show({ color: 'brand', message: `已退出「${data.room.title}」` })
+      setConfirmAction(null)
+      maskInitRef.current = false
+      setMask(null)
+      navigate('/')
+    } catch (err) {
+      notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : '退出失败' })
+    } finally {
+      setActing(false)
+    }
+  }
+
   const handleFinalize = async (w: ScoredWindow) => {
     if (!data) return
     const range = windowRange(data.room, w.dayIndex, w.startSlot, w.slotCount)
@@ -287,9 +332,47 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
               注入Mock数据
             </Button>
           )}
+          {isOwner && !isDemo && (
+            <Button variant="light" color="red" leftSection={<IconTrash size={16} />} onClick={() => setConfirmAction('delete')}>
+              删除房间
+            </Button>
+          )}
+          {!isOwner && isParticipant && (
+            <Button variant="light" color="red" leftSection={<IconDoorExit size={16} />} onClick={() => setConfirmAction('leave')}>
+              退出房间
+            </Button>
+          )}
           <SharePopover roomId={room.id} />
         </Group>
       </Group>
+
+      <Modal
+        opened={confirmAction != null}
+        onClose={() => setConfirmAction(null)}
+        title={confirmAction === 'delete' ? '删除房间' : '退出房间'}
+        centered
+        size="sm"
+      >
+        <Stack gap="md">
+          <Text size="sm">
+            {confirmAction === 'delete'
+              ? `将永久删除「${room.title}」及全部${participants.length}位参与者的时间数据，不可恢复。确认删除？`
+              : `退出后你的时间偏好将从「${room.title}」移除，可重新加入。确认退出？`}
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="light" color="gray" onClick={() => setConfirmAction(null)}>
+              取消
+            </Button>
+            <Button
+              color="red"
+              loading={acting}
+              onClick={() => void (confirmAction === 'delete' ? handleDeleteRoom() : handleLeaveRoom())}
+            >
+              {confirmAction === 'delete' ? '永久删除' : '确认退出'}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       <Card shadow="sm" padding="sm" radius="md" withBorder>
         <Group gap="lg" wrap="wrap">
