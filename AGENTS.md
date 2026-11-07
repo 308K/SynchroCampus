@@ -39,7 +39,7 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 - 无路由库：hash 路由（`#/room/:id`），`useHashRoute` + `App.tsx` 分发。
 - 时间一律走 `src/client/lib/temporal.ts`（原生 Temporal 优先 + polyfill 异步分块）；日期在 JSON 中保持字符串。
 - Mantine v7 色彩方案存储 key 是 **`mantine-color-scheme-value`**；`index.html` 首帧预置脚本必须用同一 key，默认跟随系统（auto）。顶栏切换顺序固定为 系统→深→浅（`AppNavbar`）。
-- 品牌色阶在 `theme.ts`，#ddaacc 为 shade 3；填充按钮用 `primaryShade {light:7,dark:6}`——**不要**在 #ddaacc 原色上放白字（对比度不足）。
+- 品牌色阶**程序化生成**于 `theme.ts`：以 #ddaacc 的 OKLCH（L/C/H）为锚点、每级 0.06 亮度等差展开 10 级（shade 3 精确锚定 #ddaacc），内置 sRGB 色域收缩；改色只改 `ANCHOR` 与步长。填充按钮 `primaryShade {light:7, dark:7}`（对白字 4.93:1 过 AA）；首页大标题色 `HERO_TITLE_LIGHT`（浅色自动选对 #F3F0EE ≥3:1 的最浅层）/ `HERO_TITLE_DARK`（#ddaacc 本色）。
 - 热力图色 = OKLCH 三通道插值（`lib/oklch.ts`，hue 29°红→142°绿），经 CSS 变量 `--cell-l/--cell-c/--cell-h` 注入 `.heatmap-cell`。
 - **UI 文案两条硬规则（用户强制）**：① 禁止任何 emoji，图标一律 `@tabler/icons-react`；② 中西文/数字之间不人工加空格（`text-autospace: normal` 负责），改文案时勿 reintroduce。
 - Turnstile：widget `action` 必须与服务端 `TURNSTILE_ACTIONS`（signup/login）一致；token 单次有效，每次提交后 `turnstile.reset()`（AuthModal 已处理）；组件主题用 `useComputedColorScheme()`（解析 auto，勿用 `useMantineColorScheme().colorScheme`——auto 模式下它返回字面量）。
