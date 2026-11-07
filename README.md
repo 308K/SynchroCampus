@@ -7,14 +7,23 @@
 
 ## 快速开始（本机预览）
 
-前置要求：[Bun ≥ 1.1](https://bun.sh)（Node 20+ 亦可运行 Vite 前端）。
+前置要求：[Bun ≥ 1.2](https://bun.sh)。
 
 ```bash
 bun install          # 安装依赖
-bun run dev          # 一键并发启动：API :3001（watch 热重载）+ Web :5173（Vite HMR）
+bun run dev          # Bun 全栈开发服务器：http://localhost:3001（HTML 导入 + 客户端 HMR + API 同源单进程）
 ```
 
-打开 <http://localhost:5173> 即可预览。`Ctrl+C` 一键停止全部进程。
+打开 <http://localhost:3001> 即可预览。`Ctrl+C` 停止。
+
+```bash
+bun run build        # Bun.build 生产构建 → dist/（含 public/ 平铺与 __SC_ENV__ 环境注入）
+bun run start        # 单进程生产形态：Elysia 托管 API + dist 静态资源（:3001）
+bun run typecheck    # 全链路 TypeScript 类型检查
+```
+
+> 前端由 **Bun 原生打包器（Bun.build）** 构建，无 Vite/webpack；开发时 Bun.serve 的 HTML
+> 导入管道提供 HMR。API 与前端同端口同源，无代理配置。
 
 ### 演示模式（免登录）
 
@@ -49,7 +58,7 @@ bun scripts/gen-icons.ts # 重新生成 PWA 图标（pngjs 像素绘制）
 ## 架构
 
 ```
-React 19 + Vite + Mantine v7     Bun 1.1+ 运行时
+React 19 + Mantine v7            Bun 1.2+ 运行时
 ┌────────────────────────┐       ┌──────────────────────────┐
 │ 2D 时空涂抹网格         │       │ Elysia 2（schema-first） │
 │ OKLCH 热力图            │ Eden 2│ argon2id 密码哈希         │
@@ -58,6 +67,7 @@ React 19 + Vite + Mantine v7     Bun 1.1+ 运行时
 │ Turnstile Widget        │ 类型 │ SQLite + Drizzle (WAL)   │
 │ PWA（manifest+SW）      │ 推导  └──────────────────────────┘
 └────────────────────────┘
+  构建/开发均用 Bun 原生工具链（Bun.build + Bun.serve HTML 导入 HMR）
 ```
 
 - **前后端通信**：`@elysia/eden` treaty 2，`import type { App }` 从服务端路由定义零样板推导全部请求/响应类型。注意配置 `parseDate: false`：本项目 `startDate/endDate` 是纯日期字符串，必须保持 string 交给 Temporal 处理（Eden 默认会把日期样字符串转成 Date，丢失"仅日期"语义）。
@@ -74,19 +84,25 @@ React 19 + Vite + Mantine v7     Bun 1.1+ 运行时
 
 ```
 src/
-├── client/                 # React 前端
-│   ├── api/client.ts       # Eden treaty 客户端 + token 注入
+├── client/                 # React 前端（Bun.build 打包）
+│   ├── api/client.ts       # Eden treaty 客户端 + token 注入 + pingApi
 │   ├── auth/               # 会话上下文与认证弹窗上下文
 │   ├── components/         # TurnstileWidget / TimeSlotPainter / HeatmapBoard / AgentDecisionDeck …
 │   ├── lib/                # temporal / room 几何 / mask 编码 / oklch / scheduler / ics / mock
 │   └── pages/              # HomePage / RoomPage
-├── server/                 # Elysia 后端
-│   ├── api.ts              # 接口契约（§4.2 + 读取接口）
+├── server/                 # Elysia 后端（兼 Bun 全栈 dev server）
+│   ├── index.ts            # 双模式：dist 存在→生产静态托管；否则→HTML 导入 dev server（HMR）
+│   ├── api.ts              # 接口契约（§4.2 + 读取接口 + demo/删除/退出）
 │   ├── turnstile.ts        # siteverify 服务端校验
-│   ├── jwt.ts              # HMAC-SHA256 轻量 JWT
+│   ├── jwt.ts              # 加固版 HMAC-SHA256 JWT（CryptoKey 缓存）
 │   ├── auth.ts             # Bearer 会话解析
+│   ├── demo.ts             # 演示模式种子
 │   └── db/                 # Drizzle schema + SQLite(WAL) 初始化
-scripts/dev.ts              # 并发进程管理（API + Web）
+├── shared/mock.ts          # 前后端共用的确定性 Mock 生成器
+scripts/build.ts            # 生产构建：Bun.build + public 平铺 + __SC_ENV__ 注入 + HTML 生成
+scripts/check-css.ts        # 产物 CSS 审计（backdrop-filter/light-dark 健康检查）
+scripts/smoke.ts            # 端到端 API 冒烟测试
+scripts/gen-icons.ts        # PWA 图标生成
 ```
 
 ## 数据流（答辩演示路径）

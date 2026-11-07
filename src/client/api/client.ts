@@ -2,6 +2,8 @@
 import { treaty } from '@elysia/eden'
 import type { App } from '../../server/api'
 
+import { API_BASE } from '../config'
+
 const TOKEN_KEY = 'sc_token'
 
 export const tokenStore = {
@@ -10,9 +12,8 @@ export const tokenStore = {
   clear: () => localStorage.removeItem(TOKEN_KEY),
 }
 
-const baseURL = (import.meta.env.VITE_API_BASE as string | undefined) ?? window.location.origin
-
-const treatyClient = treaty<App>(baseURL, {
+// 兜底：Bun dev 的模块内联可能把 API_BASE 求值为空串（"" falsy → 回退同源）
+const treatyClient = treaty<App>(API_BASE || window.location.origin, {
   // 关闭 Eden 的响应日期自动转换：本项目的 startDate/endDate 是纯日期字符串，
   // 必须保持 string 形态交给 Temporal.PlainDate 处理（转成 Date 会丢失"仅日期"语义并带时区偏移）
   parseDate: false,
@@ -59,7 +60,7 @@ export async function unwrap<T>(res: {
 /** 启动自检：探测后端 /api/health 是否可达（5 秒超时），不通返回 false 由调用方通报 */
 export async function pingApi(): Promise<boolean> {
   try {
-    const res = await fetch(`${baseURL}/api/health`, { signal: AbortSignal.timeout(5000) })
+    const res = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(5000) })
     if (!res.ok) return false
     const body = (await res.json()) as { ok?: boolean }
     return body.ok === true

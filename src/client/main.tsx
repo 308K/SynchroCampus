@@ -24,8 +24,8 @@ createRoot(document.getElementById('root')!).render(
   </React.StrictMode>,
 )
 
-// PWA：生产构建注册 Service Worker（开发环境不注册，避免缓存干扰热更新）
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+// PWA：仅在部署域名上注册 Service Worker（localhost 开发/预览不注册，避免缓存干扰热更新）
+if ('serviceWorker' in navigator && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {
       /* 离线能力降级：注册失败不影响主流程 */

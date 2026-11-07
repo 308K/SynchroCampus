@@ -1,17 +1,21 @@
-// 检查构建产物中的关键 CSS 规则（一次性诊断脚本）
+// 审计 Bun.build 产物 CSS（对照之前 lightningcss 的坑：light-dark 变量展开、backdrop-filter 剥离）
 import { readdirSync, readFileSync } from 'node:fs'
 
 const dir = 'dist/assets'
-const cssFile = readdirSync(dir).find((f) => f.endsWith('.css'))
+const cssFile = readdirSync(dir).find((f) => f.endsWith('.css'))!
 const css = readFileSync(`${dir}/${cssFile}`, 'utf8')
 
-const ldCount = (css.match(/light-dark\(/g) || []).length
-const lvCount = (css.match(/--lightningcss/g) || []).length
-const headerMatch = css.match(/\.mantine-AppShell-header\{[^}]*\}/)
-const unprefixed = headerMatch ? (headerMatch[0].match(/(?<!-)backdrop-filter/g) || []).length : 0
+console.log(`file: ${cssFile} (${(css.length / 1024).toFixed(0)}KB)`)
+console.log(`light-dark( count: ${(css.match(/light-dark\(/g) || []).length}`)
+console.log(`-webkit-backdrop-filter: ${(css.match(/-webkit-backdrop-filter/g) || []).length}`)
+console.log(`unprefixed backdrop-filter: ${(css.match(/(?<!-)backdrop-filter/g) || []).length}`)
+const headerRule = css.match(/\.mantine-AppShell-header\{[^}]*\}/)
+console.log(`header rule: ${headerRule ? headerRule[0].slice(0, 400) : 'NOT FOUND'}`)
+console.log(`mantine hashed classes present (.m_3b16f56b): ${css.includes('.m_3b16f56b')}`)
+console.log(`data-mantine-color-scheme selectors: ${(css.match(/data-mantine-color-scheme/g) || []).length}`)
 
-console.log(`file: ${cssFile}`)
-console.log(`light-dark() remaining: ${ldCount}`)
-console.log(`--lightningcss vars: ${lvCount}`)
-console.log(`header rule: ${headerMatch ? headerMatch[0] : 'NOT FOUND'}`)
-console.log(`unprefixed backdrop-filter in rule: ${unprefixed}`)
+// JS 产物：sitekey 与 import.meta.env 处理
+const jsFile = readdirSync(dir).find((f) => f.startsWith('main-') && f.endsWith('.js'))!
+const js = readFileSync(`${dir}/${jsFile}`, 'utf8')
+console.log(`sitekey default present: ${js.includes('0x4AAAAAAF13JTQAycn2077e')}`)
+console.log(`import.meta.env refs left: ${(js.match(/import\.meta\.env/g) || []).length}`)

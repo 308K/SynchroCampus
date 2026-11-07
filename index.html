@@ -2,15 +2,16 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
       content="序时SynchroCampus——基于离散时空碰撞与启发式约束规划的群体日程自协同决策智能体"
     />
     <meta name="theme-color" content="#ddaacc" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- 相对引用 public/：Bun dev 的 HTML 管道要求可解析；构建脚本会重写为根路径并平铺 -->
+    <link rel="manifest" href="public/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="public/icon-192.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>序时SynchroCampus·群体日程自协同</title>

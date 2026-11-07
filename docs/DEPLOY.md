@@ -22,13 +22,13 @@
 
 | 配置项 | 值 |
 | --- | --- |
-| 构建命令 | `bun install && bun run build`（正确；Pages 依据 `bun.lock` 自动使用 Bun） |
+| 构建命令 | `bun install && bun run build`（正确；Pages 依据 `bun.lock` 自动使用 Bun。构建器为 Bun.build 原生打包，无 Vite） |
 | 输出目录 | `dist` |
 | 构建环境变量 | `VITE_API_BASE=https://synchro-api.kkn.moe` |
 | 自定义域 | `synchro.kkn.moe`（Pages → Custom domains；如需 `www` 一并添加） |
 
 要点：
-- `VITE_API_BASE` 是**构建期**变量，改后必须重新触发部署；留空则前端回退到 `window.location.origin`（仅方案 B 可用）。
+- `VITE_API_BASE` 是**构建期**变量（由 `scripts/build.ts` 注入产物 HTML 的 `window.__SC_ENV__`），改后必须重新触发部署；留空则前端回退到 `window.location.origin`（仅方案 B 可用）。
 - 未配置 `VITE_API_BASE` 时前端会请求 Pages 自身域名的 `/api/*` → 404，这是最常见的联调故障。
 
 ## 2. 云服务器（后端）

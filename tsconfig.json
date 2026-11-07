@@ -12,7 +12,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["bun", "vite/client"]
+    "types": ["bun"]
   },
-  "include": ["src", "scripts", "vite.config.ts"]
+  "include": ["src", "scripts"]
 }
