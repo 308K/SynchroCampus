@@ -64,8 +64,8 @@ export function AppNavbar({ onOpenAuth }: AppNavbarProps) {
   const nextLabel = MODE_META[NEXT_MODE[mode]].label
 
   return (
-    /* px=16：胶囊左端半圆圆心 = 左缘 + 半高36px；Logo 圆 40px + 16px 内边距 → 两者同心 */
-    <Group h="100%" px={16} justify="space-between" wrap="nowrap" align="center" className="sc-capsule-nav">
+    /* px=12：胶囊左端半圆圆心 = 左缘 + 半高32px；Logo 圆 40px + 12px 内边距 → 两者同心 */
+    <Group h="100%" px={12} justify="space-between" wrap="nowrap" align="center" className="sc-capsule-nav">
       <Group gap="sm" wrap="nowrap" align="center">
         <ThemeIcon size={40} radius="50%" variant="filled">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">

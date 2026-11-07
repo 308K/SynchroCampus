@@ -118,7 +118,7 @@ export function HomePage({ navigate }: HomePageProps) {
   return (
     <Stack gap="xl" maw={1080} mx="auto" w="100%">
       <Stack gap="sm" mt={{ base: 'xs', sm: 'md' }}>
-        {/* 大标题：两行，首行品牌色 #ddaacc + 极淡阴影 */}
+        {/* 大标题：两行，首行品牌色 #ddaacc + 极淡阴影（浅色用深玫瑰色，深色用品牌色光晕） */}
         <Stack gap={0} component="header">
           <Text
             ff="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
@@ -126,7 +126,7 @@ export function HomePage({ navigate }: HomePageProps) {
             fz={{ base: '2.6rem', sm: '3.6rem' }}
             lh={1.12}
             c="#ddaacc"
-            style={{ textShadow: '0 2px 18px rgba(221, 170, 204, 0.28)' }}
+            className="sc-hero-title"
           >
             序时
           </Text>
@@ -135,6 +135,7 @@ export function HomePage({ navigate }: HomePageProps) {
             fw={800}
             fz={{ base: '2.6rem', sm: '3.6rem' }}
             lh={1.12}
+            className="sc-hero-title"
           >
             SynchroCampus
           </Text>

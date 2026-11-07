@@ -16,6 +16,15 @@
   }
 }
 
+/* 页面底色：浅色暖白（勿纯白）。html body 双选择器压过 Mantine 的 unlayered body 规则（@layer 内会输） */
+html body {
+  background: #f3f0ee;
+}
+
+[data-mantine-color-scheme='dark'] html body {
+  background: var(--mantine-color-dark-7);
+}
+
 /* ===== 离散时空网格（涂抹 / 热力图共用） =====
    注意：禁止使用 light-dark()——Vite 8 的 lightningcss 会把它编译成
    var(--lightningcss-light) var(--lightningcss-dark) 双值声明但不生成变量定义，
@@ -164,18 +173,27 @@
   --sc-weekend-tint: rgba(255, 255, 255, 0.03);
 }
 
+/* 首页大标题阴影：浅色下 #ddaacc 光晕不可见，用深玫瑰色；深色用品牌色光晕 */
+.sc-hero-title {
+  text-shadow: 0 2px 18px rgba(154, 84, 137, 0.35);
+}
+
+[data-mantine-color-scheme='dark'] .sc-hero-title {
+  text-shadow: 0 2px 18px rgba(221, 170, 204, 0.3);
+}
+
 /* ===== 胶囊形悬浮导航栏 + 毛玻璃（配方对标 mastercard.com 导航栏：
-   0.8 半透明底 + blur(7px) + 极淡投影，无边框） ===== */
-.mantine-AppShell-header {
-  top: calc(28px + env(safe-area-inset-top, 0px));
+   0.8 半透明底 + blur(7px) + 极淡投影，无边框） =====
+   header 元素选择器升特异性，压过 Mantine 哈希类规则（.m_3b16f56b 的 top/height/背景），
+   与产物中 Mantine 样式的先后顺序无关 */
+header.mantine-AppShell-header {
+  top: calc(20px + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
-  /* 不用 transform 居中（transform 会破坏自身 backdrop-filter 的合成路径）；
-     宽屏单侧留白向 30% 上限靠拢，窄屏贴边 */
-  width: min(max(40vw, 680px), calc(100vw - 24px));
+  width: min(70vw, calc(100vw - 20px));
   margin-inline: auto;
   /* 胶囊高 = AppShell 头部高度 − 上下悬浮间隙；左端半圆与圆形 Logo 同心 */
-  height: calc(var(--app-shell-header-height, 96px) - 24px);
+  height: calc(var(--app-shell-header-height, 88px) - 24px);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(7px);
@@ -183,7 +201,7 @@
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
 }
 
-[data-mantine-color-scheme='dark'] .mantine-AppShell-header {
+[data-mantine-color-scheme='dark'] header.mantine-AppShell-header {
   background: rgba(26, 27, 30, 0.8);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }

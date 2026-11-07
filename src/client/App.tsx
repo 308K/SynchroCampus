@@ -46,8 +46,8 @@ function Shell() {
   return (
     <AuthUIProvider onOpen={openAuth}>
       <ApiHealthGuard />
-      {/* header 96px = 胶囊 72px + 上下各 12px 悬浮间隙（顶部 28px 视觉留白）；胶囊左端半圆与 40px 圆形 Logo 同心（px 16 + Logo 半径 20 = 胶囊半高 36） */}
-      <AppShell header={{ height: 96 }} padding="md">
+      {/* header 88px = 胶囊 64px + 上下各 12px 悬浮间隙（顶部 20px 视觉留白）；胶囊左端半圆与 40px 圆形 Logo 同心（px 12 + Logo 半径 20 = 胶囊半高 32） */}
+      <AppShell header={{ height: 88 }} padding="md">
         <AppShell.Header>
           <AppNavbar onOpenAuth={openAuth} />
         </AppShell.Header>
