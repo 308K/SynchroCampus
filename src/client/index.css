@@ -164,7 +164,8 @@
   --sc-weekend-tint: rgba(255, 255, 255, 0.03);
 }
 
-/* ===== 胶囊形悬浮导航栏（全宽度生效）+ 高斯模糊 ===== */
+/* ===== 胶囊形悬浮导航栏 + 毛玻璃（配方对标 mastercard.com 导航栏：
+   0.8 半透明底 + blur(7px) + 极淡投影，无边框） ===== */
 .mantine-AppShell-header {
   top: calc(28px + env(safe-area-inset-top, 0px));
   left: 0;
@@ -176,16 +177,15 @@
   /* 胶囊高 = AppShell 头部高度 − 上下悬浮间隙；左端半圆与圆形 Logo 同心 */
   height: calc(var(--app-shell-header-height, 96px) - 24px);
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(18px) saturate(1.6);
-  -webkit-backdrop-filter: blur(18px) saturate(1.6);
-  box-shadow: 0 6px 24px rgba(154, 84, 137, 0.16);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
 }
 
 [data-mantine-color-scheme='dark'] .mantine-AppShell-header {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(26, 27, 30, 0.68);
+  background: rgba(26, 27, 30, 0.8);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }
 
 /* 胶囊导航栏内的控件统一胶囊形，与容器呼应（登录/注册/主题切换/账号菜单/窄屏图标按钮） */

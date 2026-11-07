@@ -118,6 +118,27 @@ export function HomePage({ navigate }: HomePageProps) {
   return (
     <Stack gap="xl" maw={1080} mx="auto" w="100%">
       <Stack gap="sm" mt={{ base: 'xs', sm: 'md' }}>
+        {/* 大标题：两行，首行品牌色 #ddaacc + 极淡阴影 */}
+        <Stack gap={0} component="header">
+          <Text
+            ff="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
+            fw={800}
+            fz={{ base: '2.6rem', sm: '3.6rem' }}
+            lh={1.12}
+            c="#ddaacc"
+            style={{ textShadow: '0 2px 18px rgba(221, 170, 204, 0.28)' }}
+          >
+            序时
+          </Text>
+          <Text
+            ff="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
+            fw={800}
+            fz={{ base: '2.6rem', sm: '3.6rem' }}
+            lh={1.12}
+          >
+            SynchroCampus
+          </Text>
+        </Stack>
         <Text size="lg" c="dimmed" maw={760}>
           序时以离散时空碰撞与启发式约束规划替代群内接龙与课表导入：成员在2D时间矩阵上涂抹偏好，智能体在端侧毫秒级求解Top-K最优排程，一键定案并派发系统日历。
         </Text>
