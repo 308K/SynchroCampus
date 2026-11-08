@@ -32,6 +32,7 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 - Eden 路径参数是**函数调用式**：`api.rooms({ id }).get()`；响应统一过 `unwrap()`（Eden 2 的 `error.status` 类型为 unknown）。
 - 无迁移系统：启动时幂等 DDL 建库（`src/server/db/index.ts`），SQLite WAL 于 `data/synchro.db`（gitignored）。启动即种子演示数据（`src/server/demo.ts`：房间 `demo`、房主 `demo-owner`，跨天自动滚动重置；演示房间禁止删除）。列级迁移用 `PRAGMA table_info` 探测后 `ALTER TABLE`（见 `register_ip` 先例）。
 - `src/server/jwt.ts` 为用户加固版：`signJwt(payload, expiresInSeconds?)` / `verifyJwt(token)` **不接收 secret 参数**（内部 CryptoKey 缓存）；`JWT_SECRET` 必须 ≥32 字节，生产缺失直接抛错；users 表含 `register_ip`（注册时经 `clientIp()` 记录）。调用方勿再传 secret。
+- `clientIp()`（`src/server/auth.ts`）取值优先级：`CF-Connecting-IP`（生产 Tunnel/Pages 边缘写入，不可伪造）→ `X-Forwarded-For` 首段（本地/通用代理兜底）→ `X-Real-IP`。
 - 房间生命周期：房主 `DELETE /api/rooms/:id`（级联删参与者）；成员 `POST /api/rooms/:id/leave`（登录按 userId、匿名按昵称；房主不可退出自己的房间）。
 
 ## 前端约定

@@ -7,6 +7,10 @@ export interface AuthUser {
 }
 
 export function clientIp(headers: Record<string, string | undefined>): string | undefined {
+  // 生产经 Cloudflare（Pages/Tunnel）接入：CF-Connecting-IP 由边缘写入、客户端不可伪造，优先级最高；
+  // X-Forwarded-For 首段仅作本地开发/通用代理兜底（直连场景可被伪造）
+  const cf = headers['cf-connecting-ip']
+  if (typeof cf === 'string' && cf.trim().length > 0) return cf.trim()
   const fwd = headers['x-forwarded-for']
   if (typeof fwd === 'string' && fwd.length > 0) return fwd.split(',')[0]?.trim()
   return headers['x-real-ip'] ?? undefined
