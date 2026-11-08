@@ -22,7 +22,7 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 - `bun --hot` 对 server 与 client 同时生效；**改动 src/client 后若页面没变，重启 dev**（HTML 管道在启动时打包，HMR 偶发不触发重打包）。
 - 停 dev 后检查 3001 端口残留（`Get-NetTCPConnection -LocalPort 3001 -State Listen`），--hot 会话可能留下占用端口的进程。
 - `TURNSTILE_SECRET` 未配置时注册/登录返回 503 引导；配置后假 token 被真实 siteverify 拒 403。smoke 按 env 有无断言两种分支，别改死。
-- 启动自检：`App.tsx` 的 `ApiHealthGuard` 加载后 ping 一次 `/api/health`（`pingApi()`，5s 超时），仅在不通时弹通知。
+- 跨域 API 提示：`scripts/build.ts` 把 `window.__SC_ENV__` 注入 head 内、CSS link 之前的脚本，并在 `VITE_API_BASE` 与页面源不同源时即时补 `preconnect`（带 `crossorigin=anonymous`，匹配 fetch 匿名 CORS 连接才能复用）+ `dns-prefetch`；同源或 dev（无 `__SC_ENV__`）不注入。
 
 ## 后端约定（Elysia 2 rc）
 
@@ -37,6 +37,7 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 ## 前端约定
 
 - 无路由库：hash 路由（`#/room/:id`），`useHashRoute` + `App.tsx` 分发。
+- 演示模式**全链路端侧化**（`src/client/lib/demo.ts`）：进入/会话恢复/涂抹/Mock注入/重置/定案/退出均零后端请求；演示 token 为端侧常量 `demo-session`（AuthContext 初始化时同步识别，不发往服务端），房间状态持久化于 localStorage `sc_demo_state`（跨天访问自动滚动重置，与服务端种子同语义）。服务端 `/demo/*` 端点与演示种子保留（smoke 依赖 + 旧客户端兼容），前端已不调用；演示会话下「重置演示」在定案后仍可用。
 - 时间一律走 `src/client/lib/temporal.ts`（原生 Temporal 优先 + polyfill 异步分块）；日期在 JSON 中保持字符串。
 - Mantine v7 色彩方案存储 key 是 **`mantine-color-scheme-value`**；`index.html` 首帧预置脚本必须用同一 key，默认跟随系统（auto）。顶栏切换顺序固定为 系统→深→浅（`AppNavbar`）。
 - 品牌色阶**程序化生成**于 `theme.ts`：以 #ddaacc 的 OKLCH（L/C/H）为锚点、每级 0.06 亮度等差展开 10 级（shade 3 精确锚定 #ddaacc），内置 sRGB 色域收缩；改色只改 `ANCHOR` 与步长。填充按钮 `primaryShade {light:7, dark:7}`（对白字 4.93:1 过 AA）；首页大标题色 `HERO_TITLE_LIGHT`（浅色自动选对 #F3F0EE ≥3:1 的最浅层）/ `HERO_TITLE_DARK`（#ddaacc 本色）。

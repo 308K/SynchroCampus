@@ -38,6 +38,16 @@ import { HeatmapBoard } from '../components/HeatmapBoard'
 import { SharePopover } from '../components/SharePopover'
 import { TimeSlotPainter } from '../components/TimeSlotPainter'
 import { nicknameStore } from '../config'
+import {
+  DEMO_ROOM_ID,
+  DEMO_USER_ID,
+  finalizeDemo,
+  injectDemoMock,
+  leaveDemo,
+  loadDemoRoom,
+  resetDemo,
+  saveDemoAvailability,
+} from '../lib/demo'
 import { emptyMask, maskToNumbers, numbersToMask } from '../lib/mask'
 import { MOCK_NAMES, generateMockMask } from '../lib/mock'
 import {
@@ -84,8 +94,18 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const maskInitRef = useRef(false)
 
+  const isDemoRoom = id === DEMO_ROOM_ID
+
+  /** 演示房间：端侧数据直读（零后端），isSelf/isOwner 随会话用户联动 */
+  const applyDemoData = (userId: string | null) => {
+    const d = loadDemoRoom(userId)
+    setData({ room: d.room, participants: d.participants, isOwner: d.isOwner })
+    setNotFound(null)
+  }
+
   const fetchRoom = useCallback(
     async (silent = false) => {
+      if (isDemoRoom) return // 演示房间走端侧数据层（见 applyDemoData），无远端状态可同步
       try {
         const res = await unwrap(await api.rooms({ id }).get())
         setData({ room: res.room as RoomDTO, participants: res.participants, isOwner: res.isOwner })
@@ -100,7 +120,7 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
         }
       }
     },
-    [id],
+    [id, isDemoRoom],
   )
 
   useEffect(() => {
@@ -109,6 +129,12 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
     setData(null)
     void fetchRoom()
   }, [id, fetchRoom])
+
+  // 演示房间数据装载：随房间 id 与会话用户变化重读端侧存储（进入/会话恢复/登出联动）；
+  // 声明在挂载 effect 之后，保证同一提交内晚于 setData(null) 执行
+  useEffect(() => {
+    if (isDemoRoom) applyDemoData(user?.id ?? null)
+  }, [id, isDemoRoom, user])
 
   // 协同轮询：8 秒同步其他成员的涂抹结果（页面可见时）
   useEffect(() => {
@@ -140,15 +166,20 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
     const name = nickname.trim() || user?.username || '匿名同学'
     setSaving(true)
     try {
-      await unwrap(
-        await api.rooms({ id: data.room.id }).availability.post({
-          nickname: name,
-          availabilityMask: numbersToMask(mask),
-        }),
-      )
+      if (isDemoRoom) {
+        saveDemoAvailability(user?.id ?? null, name, numbersToMask(mask))
+        applyDemoData(user?.id ?? null)
+      } else {
+        await unwrap(
+          await api.rooms({ id: data.room.id }).availability.post({
+            nickname: name,
+            availabilityMask: numbersToMask(mask),
+          }),
+        )
+        await fetchRoom(true)
+      }
       nicknameStore.set(name)
       notifications.show({ color: 'brand', message: '时间偏好已提交，全员热力图已同步' })
-      await fetchRoom(true)
     } catch (err) {
       notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : '提交失败' })
     } finally {
@@ -160,16 +191,21 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
     if (!data) return
     setInjecting(true)
     try {
-      for (const name of MOCK_NAMES) {
-        await unwrap(
-          await api.rooms({ id: data.room.id }).availability.post({
-            nickname: name,
-            availabilityMask: generateMockMask(data.room, `${data.room.id}:${name}`),
-          }),
-        )
+      if (isDemoRoom) {
+        injectDemoMock()
+        applyDemoData(user?.id ?? null)
+      } else {
+        for (const name of MOCK_NAMES) {
+          await unwrap(
+            await api.rooms({ id: data.room.id }).availability.post({
+              nickname: name,
+              availabilityMask: generateMockMask(data.room, `${data.room.id}:${name}`),
+            }),
+          )
+        }
+        await fetchRoom(true)
       }
       notifications.show({ color: 'brand', message: `已注入${MOCK_NAMES.length}位模拟参与者的冲突日程` })
-      await fetchRoom(true)
     } catch (err) {
       notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : 'Mock注入失败' })
     } finally {
@@ -181,11 +217,18 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
     if (!data) return
     setResetting(true)
     try {
-      await unwrap(await api.demo.reset.post())
-      maskInitRef.current = false
-      setMask(null)
+      if (isDemoRoom) {
+        resetDemo()
+        maskInitRef.current = false
+        setMask(null)
+        applyDemoData(user?.id ?? null)
+      } else {
+        await unwrap(await api.demo.reset.post())
+        maskInitRef.current = false
+        setMask(null)
+        await fetchRoom(true)
+      }
       notifications.show({ color: 'brand', message: '演示数据已重置为初始示例状态' })
-      await fetchRoom(true)
     } catch (err) {
       notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : '重置失败' })
     } finally {
@@ -216,11 +259,15 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
     if (!data) return
     setActing(true)
     try {
-      await unwrap(
-        await api.rooms({ id: data.room.id }).leave.post(
-          user ? {} : { nickname: nickname.trim().slice(0, 20) || undefined },
-        ),
-      )
+      if (isDemoRoom) {
+        leaveDemo(user?.id ?? null, (nickname.trim() || user?.username || '').slice(0, 20))
+      } else {
+        await unwrap(
+          await api.rooms({ id: data.room.id }).leave.post(
+            user ? {} : { nickname: nickname.trim().slice(0, 20) || undefined },
+          ),
+        )
+      }
       notifications.show({ color: 'brand', message: `已退出「${data.room.title}」` })
       setConfirmAction(null)
       maskInitRef.current = false
@@ -236,20 +283,24 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
   const handleFinalize = async (w: ScoredWindow) => {
     if (!data) return
     const range = windowRange(data.room, w.dayIndex, w.startSlot, w.slotCount)
+    const selectedSlot = JSON.stringify({
+      date: range.date.toString(),
+      startTime: range.startTime,
+      endTime: range.endTime,
+    })
     setFinalizing(w)
     try {
-      await unwrap(
-        await api.rooms({ id: data.room.id }).finalize.post({
-          selectedSlot: JSON.stringify({
-            date: range.date.toString(),
-            startTime: range.startTime,
-            endTime: range.endTime,
-          }),
-        }),
-      )
+      if (isDemoRoom) {
+        finalizeDemo(selectedSlot)
+        applyDemoData(user?.id ?? null)
+      } else {
+        await unwrap(
+          await api.rooms({ id: data.room.id }).finalize.post({ selectedSlot }),
+        )
+        await fetchRoom(true)
+      }
       celebrate()
       setDrawerOpen(true)
-      await fetchRoom(true)
     } catch (err) {
       notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : '定案失败' })
     } finally {
@@ -279,7 +330,7 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
   }
 
   const { room, participants, isOwner } = data
-  const isDemo = user?.id === 'demo-owner'
+  const isDemo = user?.id === DEMO_USER_ID
   const inviteLink = `${window.location.origin}/#/room/${room.id}`
   const myNickname = nickname.trim() || user?.username
   const dateSpan = `${room.startDate}~${room.endDate}（${daysOf(room)}天）`
@@ -310,7 +361,8 @@ export function RoomPage({ id, navigate }: RoomPageProps) {
           )}
         </Group>
         <Group gap="sm" wrap="wrap">
-          {isDemo && !finalized && (
+          {/* 演示会话随时可重置（含定案后），保证示例流程可反复体验 */}
+          {isDemo && (
             <Button
               variant="light"
               color="gray"

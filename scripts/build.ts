@@ -38,19 +38,29 @@ if (!entryJs || !cssFile) {
   process.exit(1)
 }
 
-// 构建期环境变量注入：在 HTML 头部写入 window.__SC_ENV__（前端 config.ts 读取）
+// 构建期环境变量注入：window.__SC_ENV__（前端 config.ts 读取）；
+// 若 API 与页面跨域，在同一脚本内即时注入 preconnect/dns-prefetch 提示——
+// 位置在 head 内所有资源之前，跨域连接在 CSS/JS/API 请求前即开始建立
+// （fetch 跨域默认凭据模式为 same-origin → 匿名 CORS 连接，preconnect 需带 crossorigin 才能复用）
 const scEnv = {
   apiBase: process.env.VITE_API_BASE || '',
   turnstileSitekey: process.env.VITE_TURNSTILE_SITEKEY || '',
 }
-const envScript = `<script>window.__SC_ENV__=${JSON.stringify(scEnv).replaceAll('<', '\\u003c')}</script>`
+const envScript = [
+  '<script>',
+  `window.__SC_ENV__=${JSON.stringify(scEnv).replaceAll('<', '\\u003c')};`,
+  '(function(){try{var b=window.__SC_ENV__.apiBase||"";if(!b)return;var o=new URL(b,location.origin).origin;'
+    + 'if(o===location.origin)return;for(var r of["preconnect","dns-prefetch"]){var l=document.createElement("link");'
+    + 'l.rel=r;l.href=o;if(r==="preconnect")l.crossOrigin="anonymous";document.head.appendChild(l)}}catch(e){}})();',
+  '</script>',
+].join('\n    ')
 
 const html = readFileSync('index.html', 'utf8')
   .replace(
     /<script type="module"[^>]*src="\/src\/client\/main\.tsx"><\/script>/,
-    `${envScript}\n    <script type="module" src="/${rel(entryJs)}"></script>`,
+    `<script type="module" src="/${rel(entryJs)}"></script>`,
   )
-  .replace('</head>', `    <link rel="stylesheet" href="/assets/${cssFile}" />\n  </head>`)
+  .replace('</head>', `    ${envScript}\n    <link rel="stylesheet" href="/assets/${cssFile}" />\n  </head>`)
   // HTML 里的 public/ 相对引用 → 部署根路径（public/ 已平铺进 dist）
   .replaceAll('href="public/', 'href="/')
 

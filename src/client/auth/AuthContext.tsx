@@ -1,6 +1,7 @@
-// 认证上下文：登录态管理与会话恢复
+// 认证上下文：登录态管理与会话恢复（演示会话端侧恢复，不依赖后端）
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, tokenStore, unwrap, ApiError } from '../api/client'
+import { DEMO_TOKEN, DEMO_USER_ID, DEMO_USERNAME } from '../lib/demo'
 
 export interface AuthUser {
   id: string
@@ -12,7 +13,7 @@ interface AuthContextValue {
   ready: boolean
   login: (username: string, password: string, turnstileToken: string) => Promise<void>
   register: (username: string, password: string, turnstileToken: string) => Promise<void>
-  /** 演示模式：接管服务端签发的演示会话 */
+  /** 接管会话：演示模式注入端侧标记 token，登录/注册接管服务端签发会话 */
   adoptSession: (token: string, user: AuthUser) => void
   logout: () => void
 }
@@ -20,14 +21,18 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [ready, setReady] = useState(false)
+  // 演示会话在初始化时端侧恢复（同步零请求）：保证首帧渲染即持有用户，房间页/首页无需等待
+  const [user, setUser] = useState<AuthUser | null>(() =>
+    tokenStore.get() === DEMO_TOKEN ? { id: DEMO_USER_ID, username: DEMO_USERNAME } : null,
+  )
+  const [ready, setReady] = useState(() => tokenStore.get() === DEMO_TOKEN)
 
-  // 会话恢复：本地 token → 服务端校验
+  // 会话恢复：本地 token → 服务端校验（演示 token 已在上方端侧恢复，跳过）
   useEffect(() => {
     let cancelled = false
     const restore = async () => {
-      if (!tokenStore.get()) {
+      const token = tokenStore.get()
+      if (!token || token === DEMO_TOKEN) {
         setReady(true)
         return
       }

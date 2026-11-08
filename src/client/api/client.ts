@@ -56,15 +56,3 @@ export async function unwrap<T>(res: {
   if (res.data === null || res.data === undefined) throw new ApiError(0, '服务端返回了空响应。')
   return res.data
 }
-
-/** 启动自检：探测后端 /api/health 是否可达（5 秒超时），不通返回 false 由调用方通报 */
-export async function pingApi(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(5000) })
-    if (!res.ok) return false
-    const body = (await res.json()) as { ok?: boolean }
-    return body.ok === true
-  } catch {
-    return false
-  }
-}

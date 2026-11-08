@@ -33,6 +33,7 @@ import { api, unwrap, ApiError, tokenStore } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { useAuthUI } from '../auth/AuthUIContext'
 import { RoomConfigForm } from '../components/RoomConfigForm'
+import { DEMO_ROOM_ID, DEMO_TOKEN, DEMO_USER_ID, DEMO_USERNAME, loadDemoRoom } from '../lib/demo'
 import { parseFinalized, type RoomDTO } from '../lib/room'
 import { Temporal, dateRange, fmtDateFull } from '../lib/temporal'
 
@@ -65,11 +66,17 @@ export function HomePage({ navigate }: HomePageProps) {
   const [rooms, setRooms] = useState<MyRoom[]>([])
   const [joinCode, setJoinCode] = useState('')
   const [loaded, setLoaded] = useState(false)
-  const [enteringDemo, setEnteringDemo] = useState(false)
 
   useEffect(() => {
     if (!user) {
       setRooms([])
+      setLoaded(true)
+      return
+    }
+    // 演示会话：房间列表端侧直读，零后端参与
+    if (user.id === DEMO_USER_ID) {
+      const d = loadDemoRoom(user.id)
+      setRooms([{ ...d.room, participantCount: d.participants.length }])
       setLoaded(true)
       return
     }
@@ -105,18 +112,11 @@ export function HomePage({ navigate }: HomePageProps) {
     navigate(`/room/${code}`)
   }
 
-  const handleDemo = async () => {
-    setEnteringDemo(true)
-    try {
-      const data = await unwrap(await api.demo.enter.post())
-      adoptSession(data.token, { id: 'demo-owner', username: data.username })
-      notifications.show({ color: 'brand', message: '已进入演示模式，示例数据加载完成' })
-      navigate(`/room/${data.roomId}`)
-    } catch (err) {
-      notifications.show({ color: 'red', message: err instanceof ApiError ? err.message : '演示模式启动失败' })
-    } finally {
-      setEnteringDemo(false)
-    }
+  // 进入演示模式：端侧注入演示会话并直达示例房间，全程零后端参与
+  const handleDemo = () => {
+    adoptSession(DEMO_TOKEN, { id: DEMO_USER_ID, username: DEMO_USERNAME })
+    notifications.show({ color: 'brand', message: '已进入演示模式，示例数据加载完成' })
+    navigate(`/room/${DEMO_ROOM_ID}`)
   }
 
   return (
@@ -151,8 +151,7 @@ export function HomePage({ navigate }: HomePageProps) {
           <Button
             size="md"
             leftSection={<IconFlask size={17} />}
-            loading={enteringDemo}
-            onClick={() => void handleDemo()}
+            onClick={handleDemo}
           >
             进入演示模式
           </Button>
