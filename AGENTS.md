@@ -7,7 +7,7 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 - `bun run dev` — **单进程** Bun 全栈 dev server：http://localhost:3001（HTML 导入 + 客户端 HMR + API 同源；`BUN_DEV=1 bun --hot`）。仅 3001 一个端口，无 5173。
 - `bun run build` — `scripts/build.ts`：Bun.build → `dist/`（hash 资产 + public/ 平铺 + `__SC_ENV__` 注入 + index.html 生成）。
 - `bun run start` — 生产单进程：Elysia 托管 API + dist 静态资源（:3001）。`bun run start` 与 `bun run dev` 互斥使用同一端口。
-- `bun run typecheck` — TS7 全链路检查（唯一的静态校验，无 lint/test 框架）。
+- `bun run typecheck` — `bun check`（Bun 内置 TS7 检查器，语义与 `tsc --noEmit` 一致且更快；唯一的静态校验，无 lint/test 框架）。`typescript` devDependency 保留供编辑器 IntelliSense。
 - `bun scripts/smoke.ts` — 端到端 API 断言（20 项，自清理），**要求 API 已在 :3001 运行**。
 - `bun scripts/check-css.ts` — 审计 dist CSS（backdrop-filter 双写、light-dark 残留），改样式/换构建器后必跑。
 - PWA 图标：`bun scripts/gen-icons.ts`（pngjs 像素绘制）；改配色后必须重跑。
