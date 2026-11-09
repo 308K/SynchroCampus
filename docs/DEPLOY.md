@@ -24,12 +24,14 @@
 | --- | --- |
 | 构建命令 | `bun install && bun run build`（正确；Pages 依据 `bun.lock` 自动使用 Bun。构建器为 Bun.build 原生打包，无 Vite） |
 | 输出目录 | `dist` |
-| 构建环境变量 | `VITE_API_BASE=https://synchro-api.kkn.moe` |
+| 构建环境变量 | `VITE_API_BASE=https://synchro-api.kkn.moe`<br>`VITE_TURNSTILE_SITEKEY=0x4AAAAAAF13JTQAycn2077e` |
 | 自定义域 | `synchro.kkn.moe`（Pages → Custom domains；如需 `www` 一并添加） |
 
 要点：
 - `VITE_API_BASE` 是**构建期**变量（由 `scripts/build.ts` 注入产物 HTML 的 `window.__SC_ENV__`），改后必须重新触发部署；留空则前端回退到 `window.location.origin`（仅方案 B 可用）。
 - 未配置 `VITE_API_BASE` 时前端会请求 Pages 自身域名的 `/api/*` → 404，这是最常见的联调故障。
+- `VITE_TURNSTILE_SITEKEY` 是 Turnstile 组件 Site Key（公开值，与后端 `TURNSTILE_SECRET` 配对）。配置后构建注入非空值，消除对 bundle 内硬编码兜底的依赖（审计 M-05）；缺失时构建会打印警告。
+- `dist/` 自带 `_headers`（CSP Report-Only + Permissions-Policy/COOP/CORP + `/assets/*` immutable + `/sw.js` no-cache）与 `404.html`（未知路径返回真 404，替代全路径 200 的 SPA fallback，审计 M-04）。两者由 Pages 自动生效，无需面板配置；CSP 观察 1–2 周无违规后，把 `_headers` 中的 `Content-Security-Policy-Report-Only` 改名为 `Content-Security-Policy` 切换强制。
 
 ## 2. 云服务器（后端）
 

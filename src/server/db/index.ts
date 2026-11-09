@@ -37,6 +37,13 @@ CREATE TABLE IF NOT EXISTS participants (
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS revoked_sessions (
+  jti TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  revoked_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_rooms_owner ON rooms(owner_id);
 CREATE INDEX IF NOT EXISTS idx_participants_room ON participants(room_id);
 `

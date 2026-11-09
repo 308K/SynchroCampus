@@ -69,6 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    // 服务端吊销当前会话（审计 M-01）：尽力而为，失败（网络/过期/演示哨兵）不阻塞本地登出
+    void api.auth.logout.post().catch(() => {})
     tokenStore.clear()
     setUser(null)
   }, [])

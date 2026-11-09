@@ -8,7 +8,7 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 - `bun run build` — `scripts/build.ts`：Bun.build → `dist/`（hash 资产 + public/ 平铺 + `__SC_ENV__` 注入 + index.html 生成）。
 - `bun run start` — 生产单进程：Elysia 托管 API + dist 静态资源（:3001）。`bun run start` 与 `bun run dev` 互斥使用同一端口。
 - `bun run typecheck` — `bun check`（Bun 内置 TS7 检查器，语义与 `tsc --noEmit` 一致且更快；唯一的静态校验，无 lint/test 框架）。`typescript` devDependency 保留供编辑器 IntelliSense。
-- `bun scripts/smoke.ts` — 端到端 API 断言（20 项，自清理），**要求 API 已在 :3001 运行**。
+- `bun scripts/smoke.ts` — 端到端 API 断言（22 项，自清理），**要求 API 已在 :3001 运行**。
 - `bun scripts/check-css.ts` — 审计 dist CSS（backdrop-filter 双写、light-dark 残留），改样式/换构建器后必跑。
 - PWA 图标：`bun scripts/gen-icons.ts`（pngjs 像素绘制）；改配色后必须重跑。
 
@@ -34,6 +34,8 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 - `src/server/jwt.ts` 为用户加固版：`signJwt(payload, expiresInSeconds?)` / `verifyJwt(token)` **不接收 secret 参数**（内部 CryptoKey 缓存）；`JWT_SECRET` 必须 ≥32 字节，生产缺失直接抛错；users 表含 `register_ip`（注册时经 `clientIp()` 记录）。调用方勿再传 secret。
 - `clientIp()`（`src/server/auth.ts`）取值优先级：`CF-Connecting-IP`（生产 Tunnel/Pages 边缘写入，不可伪造）→ `X-Forwarded-For` 首段（本地/通用代理兜底）→ `X-Real-IP`。
 - 房间生命周期：房主 `DELETE /api/rooms/:id`（级联删参与者）；成员 `POST /api/rooms/:id/leave`（登录按 userId、匿名按昵称；房主不可退出自己的房间）。
+- 登出为**服务端吊销**（`POST /api/auth/logout`，审计 M-01）：当前 JWT 的 `jti` 写入 `revoked_sessions` 黑名单（启动幂等 DDL 建表），`currentUser` 命中即 401；黑名单 fail-open（查无记录放行），历史令牌不受部署影响。
+- 未知路径兜底：`/api/*` 未命中返回 JSON 404（api.ts 末尾通配路由），非 API 路径返回 `dist/404.html`（404 状态，与 Pages 404.html 语义对齐）；`public/_headers` 提供 CSP-Report-Only / Permissions-Policy / COOP / CORP / immutable / sw.js no-cache，仅 Pages 生效（审计 H-01/M-04/M-06）。
 
 ## 前端约定
 

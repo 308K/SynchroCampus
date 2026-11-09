@@ -195,6 +195,16 @@ async function main() {
     const del = await fetch(`${BASE}/rooms/${roomId}`, { method: 'DELETE', headers: authHeaders })
     const afterDel = await fetch(`${BASE}/rooms/${roomId}`)
     check('房主删除房间并级联清理（房间404）', del.status === 200 && afterDel.status === 404)
+
+    // 21) 未知 API 路径返回 JSON 404（而非 SPA fallback 的 200 HTML，审计 M-04）
+    const missing = await fetch(`${BASE}/definitely-not-exist`)
+    const missingBody = (await missing.json().catch(() => null)) as { error?: string } | null
+    check('GET /api/* 未知路径返回 JSON 404', missing.status === 404 && typeof missingBody?.error === 'string')
+
+    // 22) 登出吊销（审计 M-01）：logout 后原令牌立即失效；本项置于最后（token 随即作废）
+    const lo = await fetch(`${BASE}/auth/logout`, { method: 'POST', headers: authHeaders })
+    const meAfterLogout = await fetch(`${BASE}/auth/me`, { headers: { authorization: `Bearer ${token}` } })
+    check('POST /auth/logout 后原令牌被吊销（me 401）', lo.status === 200 && meAfterLogout.status === 401)
   } finally {
     // 清理：删除测试用户（级联清理其房间与参与者）
     db.delete(rooms).where(eq(rooms.ownerId, uid)).run()

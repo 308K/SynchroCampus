@@ -38,6 +38,17 @@ export const participants = sqliteTable('participants', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
 
+// 已吊销令牌黑名单（审计 M-01）：登出时把当前 JWT 的 jti 写入，
+// currentUser 命中即拒绝。只存被吊销的 jti（非全量会话表），fail-open：
+// 查无记录放行，历史令牌（无 jti）与部署重启不受影响
+export const revokedSessions = sqliteTable('revoked_sessions', {
+  jti: text('jti').primaryKey(),
+  userId: text('user_id').notNull(),
+  // 令牌自身的 exp 过期时间；过期后黑名单条目即无意义（可被登出时的顺手清理删除）
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  revokedAt: integer('revoked_at', { mode: 'timestamp' }).notNull(),
+})
+
 export type UserRow = typeof users.$inferSelect
 export type RoomRow = typeof rooms.$inferSelect
 export type ParticipantRow = typeof participants.$inferSelect

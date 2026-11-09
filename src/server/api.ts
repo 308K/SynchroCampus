@@ -3,11 +3,11 @@
 // Elysia 2 约定：schema 位于 handler 之前（.post(path, schema, handler)）
 // 使用 status() 辅助返回错误，保证 Eden 全链路类型精确（data 仅含成功形态）
 import { Elysia, t, status } from 'elysia'
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, lt, sql } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { Temporal } from 'temporal-polyfill'
 import { db } from './db'
-import { participants, rooms, users, type RoomRow } from './db/schema'
+import { participants, revokedSessions, rooms, users, type RoomRow } from './db/schema'
 import { clientIp, currentUser, type AuthUser } from './auth'
 import { signJwt } from './jwt'
 import { verifyTurnstileToken } from './turnstile'
@@ -134,6 +134,26 @@ export const app = new Elysia({ prefix: '/api' })
   .get('/auth/me', ({ user }) => {
     if (!user) return err(401, '未登录或会话已过期。')
     return { user: { id: user.id, username: user.username } }
+  })
+
+  // 登出：服务端吊销当前会话（审计 M-01）。黑名单只存被吊销的 jti，
+  // currentUser 命中即 401；查无记录放行（fail-open），历史令牌不受部署影响
+  .post('/auth/logout', ({ user }) => {
+    if (!user) return err(401, '请先登录。')
+    if (user.sessionId) {
+      const now = new Date()
+      // 顺手清理已过期令牌的黑名单条目（过期令牌本就无法通过签名校验）
+      db.delete(revokedSessions).where(lt(revokedSessions.expiresAt, now)).run()
+      db.insert(revokedSessions)
+        .values({
+          jti: user.sessionId,
+          userId: user.id,
+          expiresAt: user.sessionExpiresAt ?? new Date(now.getTime() + 2 * 3600 * 1000),
+          revokedAt: now,
+        })
+        .run()
+    }
+    return { ok: true }
   })
 
   // 演示模式：免登录进入示例房间（签发演示房主会话）
@@ -402,5 +422,9 @@ export const app = new Elysia({ prefix: '/api' })
       return { ok: true }
     },
   )
+
+  // 兜底：未知 API 路径返回 JSON 404（审计 M-04/L-06：
+  // 此前会落入 SPA fallback 返回 200 HTML，污染 API 契约与安全探测语义）
+  .get('/*', () => err(404, '接口不存在。'))
 
 export type App = typeof app

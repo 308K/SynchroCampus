@@ -2,6 +2,10 @@
 // 产物：dist/index.html + dist/assets/<name>-<hash>.{js,css} + public/* 平铺
 import { cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
+// 生产构建强制 NODE_ENV=production（审计 M-03）：缺省时 Bun 会以开发形态编译 JSX
+// （jsxDEV + React dev 运行时分支），产物体积膨胀且保留更详细的运行时警告
+process.env.NODE_ENV ||= 'production'
+
 const outdir = 'dist'
 rmSync(outdir, { recursive: true, force: true })
 
@@ -17,6 +21,9 @@ const result = await Bun.build({
     asset: 'assets/[name]-[hash].[ext]',
   },
   outdir,
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+  },
 })
 
 if (!result.success) {
@@ -24,7 +31,7 @@ if (!result.success) {
   process.exit(1)
 }
 
-// public/ 平铺复制（favicon、图标、manifest、sw.js）
+// public/ 平铺复制（favicon、图标、manifest、sw.js、_headers、404.html 等）
 if (existsSync('public')) cpSync('public', outdir, { recursive: true })
 
 // 生成 index.html：替换脚本引用 + 注入 CSS link
@@ -45,6 +52,13 @@ if (!entryJs || !cssFile) {
 const scEnv = {
   apiBase: process.env.VITE_API_BASE || '',
   turnstileSitekey: process.env.VITE_TURNSTILE_SITEKEY || '',
+}
+// 注入链路可见性（审计 M-05）：生产变量缺失时显式告警，避免运行期静默回落
+if (!scEnv.apiBase) {
+  console.warn('[build] VITE_API_BASE 未设置：前端将回退同源（方案 A 部署会导致 /api 404，见 docs/DEPLOY.md）')
+}
+if (!scEnv.turnstileSitekey) {
+  console.warn('[build] VITE_TURNSTILE_SITEKEY 未设置：前端回退 bundle 内硬编码 sitekey，站点密钥轮换时会静默失配（审计 M-05）')
 }
 const envScript = [
   '<script>',

@@ -21,8 +21,16 @@ const root = new Elysia()
       origin: corsOrigins ? corsOrigins.split(',').map((o) => o.trim()).filter(Boolean) : true,
       allowedHeaders: ['authorization', 'content-type'],
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      // 审计 M-02：预检缓存 5s → 10min
+      maxAge: 600,
     }),
   )
+  // 审计 M-02：@elysia/cors 默认 exposeHeaders=true 会把本次请求的请求头名动态拼进
+  // Access-Control-Expose-Headers（调试残留），且类型不接受 false、传值即固定写头。
+  // 在 CORS 的 onRequest 之后统一剥除该响应头（应用未暴露任何自定义响应头，无需白名单）
+  .onRequest(({ set }) => {
+    delete set.headers['access-control-expose-headers']
+  })
   .use(app)
 
 const MIME: Record<string, string> = {
@@ -59,9 +67,19 @@ if (!devMode) {
       return null
     }
   }
+  // 未知路径的兜底语义与 Pages 对齐（审计 M-04）：未知路径返回 dist/404.html（404 状态），
+  // 而非全路径 200 HTML；404 页缺失时退回旧的 index.html 行为
+  const notFoundFile = existsSync('dist/404.html') ? 'dist/404.html' : 'dist/index.html'
   root.get('/*', ({ params }) => {
     const asset = serveFile(params['*'] ?? '')
-    return asset ?? new Response(Bun.file('dist/index.html'), {
+    if (asset) return asset
+    if (!(params['*'] ?? '')) {
+      return new Response(Bun.file('dist/index.html'), {
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      })
+    }
+    return new Response(Bun.file(notFoundFile), {
+      status: 404,
       headers: { 'content-type': 'text/html; charset=utf-8' },
     })
   })

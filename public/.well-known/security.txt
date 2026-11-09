@@ -1,0 +1,4 @@
+Contact: https://github.com/308K
+Expires: 2027-11-09T00:00:00Z
+Preferred-Languages: zh-CN, en
+Canonical: https://synchro.kkn.moe/.well-known/security.txt
