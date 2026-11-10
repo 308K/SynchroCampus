@@ -1,10 +1,13 @@
 # Cloudflare Pages 响应头配置（构建时由 public/ 平铺进 dist 根，Pages 自动生效）
 # 注意：nosniff / X-Frame-Options / Referrer-Policy 已由 zone 级配置下发，这里不重复添加（避免双写重复头）。
-# CSP 当前为 Report-Only（审计 H-01，第一步）：观察期结束、真实浏览器全流程无违规后，
-# 把下方 Content-Security-Policy-Report-Only 改名为 Content-Security-Policy 切换强制，
-# 并在策略末尾补回 upgrade-insecure-requests（该指令在 Report-Only 下被规范忽略，故暂不写入）。
+# CSP 为强制模式（2026-11-10 起，审计 H-01 整改完成；Report-Only 观察期已通过：
+# 注册/Turnstile/定案全流程零第一方违规）。排查未来报告：把头名临时改回
+# Content-Security-Policy-Report-Only 即回到只报告不拦截模式。
+# console 中剩余报错均非本站策略，勿据此放宽白名单：
+# - "data:," 被 ca1.cloudflarecaptcha.com 系策略拦截 = Cloudflare 挑战 iframe 自家噪音
+# - content.js 的 nonce 拦截 / at.alicdn.com 与 chrome-extension 字体的 font-src 报告 = 浏览器扩展注入
 /*
-  Content-Security-Policy-Report-Only: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://synchro-api.kkn.moe https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; manifest-src 'self'
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://synchro-api.kkn.moe https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin

@@ -35,7 +35,7 @@ SynchroCampus（序时）：React 19 + Mantine v7 前端，Bun + Elysia 2(rc) + 
 - `clientIp()`（`src/server/auth.ts`）取值优先级：`CF-Connecting-IP`（生产 Tunnel/Pages 边缘写入，不可伪造）→ `X-Forwarded-For` 首段（本地/通用代理兜底）→ `X-Real-IP`。
 - 房间生命周期：房主 `DELETE /api/rooms/:id`（级联删参与者）；成员 `POST /api/rooms/:id/leave`（登录按 userId、匿名按昵称；房主不可退出自己的房间）。
 - 登出为**服务端吊销**（`POST /api/auth/logout`，审计 M-01）：当前 JWT 的 `jti` 写入 `revoked_sessions` 黑名单（启动幂等 DDL 建表），`currentUser` 命中即 401；黑名单 fail-open（查无记录放行），历史令牌不受部署影响。
-- 未知路径兜底：`/api/*` 未命中返回 JSON 404（api.ts 末尾通配路由），非 API 路径返回 `dist/404.html`（404 状态，与 Pages 404.html 语义对齐）；`public/_headers` 提供 CSP-Report-Only / Permissions-Policy / COOP / CORP / immutable / sw.js no-cache，仅 Pages 生效（审计 H-01/M-04/M-06）。
+- 未知路径兜底：`/api/*` 未命中返回 JSON 404（api.ts 末尾通配路由），非 API 路径返回 `dist/404.html`（404 状态，与 Pages 404.html 语义对齐）；`public/_headers` 提供 CSP（强制，2026-11-10 起）/ Permissions-Policy / COOP / CORP / immutable / sw.js no-cache，仅 Pages 生效（审计 H-01/M-04/M-06）。CSP 白名单勿按扩展噪音放宽（详见 `_headers` 注释）。
 
 ## 前端约定
 
