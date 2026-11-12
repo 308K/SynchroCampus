@@ -1,5 +1,5 @@
 // 登录 / 注册弹窗：Cloudflare Turnstile 人机验证 + JWT 会话签发
-import { useEffect, useState, type Ref } from 'react'
+import { useEffect, useState, type FormEvent, type Ref } from 'react'
 import { Alert, Button, Modal, PasswordInput, SegmentedControl, Stack, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconInfoCircle } from '@tabler/icons-react'
@@ -71,6 +71,12 @@ export function AuthModal({ opened, onClose, initialMode = 'login' }: AuthModalP
     }
   }
 
+  // 原生 form 提交：Enter 隐式提交对 IME 天然安全（浏览器会在组合输入时抑制），且让密码管理器能正确保存/回填凭据
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    void handleSubmit()
+  }
+
   return (
     <Modal
       opened={opened}
@@ -79,50 +85,59 @@ export function AuthModal({ opened, onClose, initialMode = 'login' }: AuthModalP
       centered
       overlayProps={{ blur: 3 }}
     >
-      <Stack>
-        <SegmentedControl
-          value={mode}
-          onChange={(v) => switchMode(v as AuthMode)}
-          data={[
-            { value: 'login', label: '登录' },
-            { value: 'register', label: '注册' },
-          ]}
-          fullWidth
-        />
-        <TextInput
-          label="用户名"
-          placeholder="3–20个字符"
-          value={username}
-          onChange={(e) => setUsername(e.currentTarget.value)}
-          maxLength={20}
-        />
-        <PasswordInput
-          label="密码"
-          placeholder={mode === 'register' ? '至少 6 位' : '你的密码'}
-          value={password}
-          onChange={(e) => setPassword(e.currentTarget.value)}
-          maxLength={32}
-        />
-        <TurnstileWidget
-          key={mode}
-          action={mode === 'login' ? TURNSTILE_ACTIONS.login : TURNSTILE_ACTIONS.register}
-          onToken={setToken}
-          ref={setTurnstileRef}
-        />
-        {error && (
-          <Alert color="red" icon={<IconInfoCircle size={16} />} py="xs">
-            {error}
-          </Alert>
-        )}
-        <Button
-          fullWidth
-          loading={submitting}
-          disabled={!token || !username || !password}
-          onClick={() => void handleSubmit()}
-        >
-          {mode === 'login' ? '登录并继续' : '创建账户'}
-        </Button>
-      </Stack>
+      <form onSubmit={handleFormSubmit}>
+        <Stack>
+          <SegmentedControl
+            value={mode}
+            onChange={(v) => switchMode(v as AuthMode)}
+            data={[
+              { value: 'login', label: '登录' },
+              { value: 'register', label: '注册' },
+            ]}
+            fullWidth
+          />
+          <TextInput
+            label="用户名"
+            placeholder="3–20个字符"
+            name="username"
+            autoComplete="username"
+            spellCheck={false}
+            required
+            value={username}
+            onChange={(e) => setUsername(e.currentTarget.value)}
+            maxLength={20}
+          />
+          <PasswordInput
+            label="密码"
+            placeholder={mode === 'register' ? '至少 6 位' : '你的密码'}
+            name="password"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.currentTarget.value)}
+            maxLength={32}
+          />
+          <TurnstileWidget
+            key={mode}
+            action={mode === 'login' ? TURNSTILE_ACTIONS.login : TURNSTILE_ACTIONS.register}
+            onToken={setToken}
+            ref={setTurnstileRef}
+          />
+          {error && (
+            <Alert color="red" icon={<IconInfoCircle size={16} />} py="xs">
+              {error}
+            </Alert>
+          )}
+          <Button
+            type="submit"
+            fullWidth
+            loading={submitting}
+            disabled={!token || !username || !password}
+          >
+            {mode === 'login' ? '登录并继续' : '创建账户'}
+          </Button>
+        </Stack>
+      </form>
     </Modal>
   )
 }

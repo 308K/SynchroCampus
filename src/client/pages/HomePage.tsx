@@ -218,7 +218,8 @@ export function HomePage({ navigate }: HomePageProps) {
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.currentTarget.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleJoin()
+                  // IME 组合输入中确认候选词的 Enter（isComposing / keyCode 229，后者兼容 Safari 乱序）不触发跳转
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) handleJoin()
                 }}
                 rightSection={
                   <Tooltip label="进入房间">
